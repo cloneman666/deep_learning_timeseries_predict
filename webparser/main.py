@@ -57,7 +57,8 @@ def buy(times, choose):
 if __name__ == "__main__":
     times = input("请输入抢购时间，格式如(2018-09-06 11:20:00.000000):")
     # 时间格式："2018-09-06 11:20:00.000000"
-    browser = webdriver.Chrome()
+    path = 'D:\learncode\zzc_learn_code\chromedriver_win32\chromedriver.exe'
+    browser = webdriver.Chrome(executable_path=path)
     browser.maximize_window()
     login()
     choose = int(input("到时间自动勾选购物车请输入“1”，否则输入“2”："))
