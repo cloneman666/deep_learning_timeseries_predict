@@ -57,7 +57,8 @@ def buy(times, choose):
 if __name__ == "__main__":
     times = input("请输入抢购时间，格式如(2018-09-06 11:20:00.000000):")
     # 时间格式："2018-09-06 11:20:00.000000"
-    path = 'D:\learncode\zzc_learn_code\chromedriver_win32\chromedriver.exe'
+    # path = 'D:\learncode\zzc_learn_code\chromedriver\chromedriver'
+    path = '/Users/zhaozhichao/zzc_jupter/learn_code/chromedriver/chromedriver'
     browser = webdriver.Chrome(executable_path=path)
     browser.maximize_window()
     login()
