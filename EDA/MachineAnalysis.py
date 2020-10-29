@@ -15,9 +15,14 @@ class MachineAnalysis():
         self.columns = dataframe.columns
         self.numerical_columns = [name for name in self.columns if
                                   (self.df[name].dtype == 'int64') | (self.df[name].dtype == 'float64')]
+        self.X = dataframe.iloc[:-1,]
+        self.Y = dataframe.iloc[:,-1]
 
     def Ordinary_Least_Squares(self):
-        pass
+        model = linear_model.LinearRegression()
+        model.fit(self.X,self.Y)
+        return model
+
 
 
 

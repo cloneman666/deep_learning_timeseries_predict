@@ -7,6 +7,7 @@
 # @Software: PyCharm
 
 from ExploratoryAnalysis import ExploratoryAnalysis
+from MachineAnalysis import MachineAnalysis
 import streamlit as st
 import pandas as pd
 
@@ -29,6 +30,7 @@ def GetData():
 			st.warning('csv类型文件还有问题，解决中...')
 			return (pd.read_csv(updata,engine='python',header=0,skiprows=1))
 
+#基本分析方法
 def main_basic_analysis():
 	#为基本数据分析模块
 	def Model1():
@@ -88,6 +90,7 @@ def main_basic_analysis():
 	except:
 		st.error('请上传csv或者xls格式的文件！')
 
+#机器学习分析方法
 def main_machine_learning_analysis():
 	try:
 		df = GetData()
@@ -96,7 +99,7 @@ def main_machine_learning_analysis():
 		st.error('请上传csv或者xls格式的文件！')
 
 
-
+#深度学习分析方法
 def main_deep_learning_analysis():
 	try:
 		df = GetData()
