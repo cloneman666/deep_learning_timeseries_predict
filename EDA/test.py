@@ -14,7 +14,6 @@ st.set_option('deprecation.showPyplotGlobalUse', False) #先不显示画图警�
 
 def main():
 
-
 	def GetData():
 		updata = st.file_uploader('上传数据地址',type=['csv','xls'])
 		if updata is not None:
