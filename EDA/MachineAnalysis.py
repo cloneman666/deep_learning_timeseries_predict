@@ -16,5 +16,8 @@ class MachineAnalysis():
         self.numerical_columns = [name for name in self.columns if
                                   (self.df[name].dtype == 'int64') | (self.df[name].dtype == 'float64')]
 
-    def Ordinary Least Squares
+    def Ordinary_Least_Squares(self):
+        pass
+
+
 
