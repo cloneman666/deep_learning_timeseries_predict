@@ -6,7 +6,14 @@
 # @File    : test.py
 # @Software: PyCharm
 
+# Windows 安装modin
+#https://www.jianshu.com/p/ac339a8ea0d0
 
+import os
+
+os.environ["MODIN_ENGINE"] = "dask"  # Modin will use Dask
+
+# import multiprocessing as mp
 import pymysql
 import modin.pandas as pd
 import numpy as np
@@ -61,7 +68,7 @@ def get_data1():
     try:
         #co = pymysql.connect(host="192.168.2.51", user="ggy", db="ky", passwd="123456", use_unicode=True, charset="utf8")
         sql = "select * from fpnr limit 1000"
-        print("正在加载数据，请稍后！")
+        print("fpnr正在远程加载数据，请稍后！")
         con = pymysql.connect(host='localhost',port = 3306,user='root',db="airportdata",passwd='zzc123456',use_unicode=True,charset="utf8")
         # 获取游标
     # cursor = con.cursor()
@@ -80,7 +87,7 @@ def get_data1():
 def get_data2():
     try:
         sql = 'select * from prl '
-        print('数据加载中....')
+        print('prl数据远程加载中....')
         con = pymysql.connect(host='localhost', port=3306, user='root', db="airportdata", passwd='zzc123456',
                           use_unicode=True, charset="utf8")
         data = pd.read_sql(sql,con)
@@ -97,7 +104,7 @@ def get_data2():
 # 数据预处理表1，fpnr
 def process_data(datafile):
     #这一部分为其中一个表的预处理
-    print('fpnr数据处理中...')
+    print('fpnr数据预处理中...')
     # df1 = pd.read_csv(datafile, usecols=["Pnr_Crt_Dt", "Lcl_Dpt_Dt", "Lcl_Dpt_Tm", "Pax_Id_Nbr"])
     df1 = pd.DataFrame(datafile,columns=["Pnr_Crt_Dt", "Lcl_Dpt_Dt", "Lcl_Dpt_Tm", "Pax_Id_Nbr"])
     data = df1.drop_duplicates()
@@ -122,7 +129,7 @@ def process_data(datafile):
 #数据预处理表2,prl
 def process_data2(datafile):
     # df = pd.read_csv('prl.csv', error_bad_lines=False)
-    print('prl数据处理中...')
+    print('prl数据预处理中...')
     df = pd.DataFrame(datafile)
     data_deal = df.drop(
         ['recordId', 'firstName', 'lastName', 'name', 'cnin', 'tkne', 'legNum', 'psm', 'infTkne1', 'legNum1',
@@ -324,7 +331,12 @@ def main(data):
 
 if __name__ == '__main__':
     #记录时间
+
+
     start_time = time.time()
+
+    # p = mp.Process(target=get_data1(), args=())
+    # p.start()
 
     data1 = get_data1()
     data_avgday = process_data(data1)
