@@ -13,7 +13,7 @@
 #
 # os.environ["MODIN_ENGINE"] = "dask"  # Modin will use Dask
 
-# import multiprocessing as mp
+
 import pymysql
 import pandas as pd
 import numpy as np
@@ -22,6 +22,9 @@ import time
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import logging
+logging.basicConfig(format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s',
+                    level=logging.INFO,filename='./log/test.log')
 
 def get_time_dif(start_time):
     """
@@ -67,10 +70,9 @@ def test_Kmeans_nclusters(data_train):
 def get_data1():
     try:
         #co = pymysql.connect(host="192.168.2.51", user="ggy", db="ky", passwd="123456", use_unicode=True, charset="utf8")
-        sql = "select * from fpnr limit 1000"
+        sql = "select * from fpnr limit 10000"
         print("fpnr正在远程加载数据，请稍后！")
         con = pymysql.connect(host='localhost',port = 3306,user='root',db="airportdata",passwd='zzc123456',use_unicode=True,charset="utf8")
-        # 获取游标
     # cursor = con.cursor()
     # cursor.execute(sql)
         data = pd.read_sql(sql,con)
