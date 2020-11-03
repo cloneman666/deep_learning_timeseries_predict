@@ -9,13 +9,13 @@
 # Windows 安装modin
 #https://www.jianshu.com/p/ac339a8ea0d0
 
-import os
-
-os.environ["MODIN_ENGINE"] = "dask"  # Modin will use Dask
+# import os
+#
+# os.environ["MODIN_ENGINE"] = "dask"  # Modin will use Dask
 
 # import multiprocessing as mp
 import pymysql
-import modin.pandas as pd
+import pandas as pd
 import numpy as np
 from datetime import timedelta
 import time
@@ -258,7 +258,7 @@ def main(data):
         return plt
 
     pic_output = ''  # 概率密度图文件名前缀
-    for i in tqdm(range(k),desc='聚类图片保存中'):
+    for i in tqdm(range(k),desc='聚类图片保存中...'):
         density_plot(R[r[u'聚类类别'] == i]).savefig(u'./output_data/%s%s.png' % (pic_output, i))
 
     nums, SSE = test_Kmeans_nclusters(data_zs)
@@ -299,7 +299,7 @@ def main(data):
     center_num = r.values
     feature = ['F', 'R', 'avg_day']
     N = len(feature)
-    for i, v in enumerate(center_num):
+    for i, v in tqdm(enumerate(center_num),desc='画雷达图中...'):
         # 设置雷达图的角度，用于平分切开一个圆面
         angles = np.linspace(0, 2 * np.pi, N, endpoint=False)
         # 为了使雷达图一圈封闭起来，需要下面的步骤
