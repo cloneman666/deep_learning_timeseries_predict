@@ -13,6 +13,8 @@
 #
 # os.environ["MODIN_ENGINE"] = "dask"  # Modin will use Dask
 
+# import modin.pandas as pd
+
 
 import pymysql
 import pandas as pd
@@ -24,7 +26,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import logging
 logging.basicConfig(format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s',
-                    level=logging.INFO,filename='./log/test.log')
+                    level=logging.INFO,filename='../log/Pas_cluster_analysis.log')
 
 def get_time_dif(start_time):
     """
@@ -43,8 +45,7 @@ def distEclud(vecA, vecB):
     """
     return np.sum(np.power(vecA - vecB, 2))
 
-
-def test_Kmeans_nclusters(data_train):
+def Kmeans_nclusters(data_train):
     """
     计算不同的k值时，SSE的大小变化
     """
@@ -67,41 +68,85 @@ def test_Kmeans_nclusters(data_train):
     return nums, SSE
 
 # 从远程获取数据fpnr
-def get_data1():
+def get_data1(statr_time,end_time):
     try:
         #co = pymysql.connect(host="192.168.2.51", user="ggy", db="ky", passwd="123456", use_unicode=True, charset="utf8")
-        sql = "select * from fpnr limit 10000"
+        sql = "select Pnr_Crt_Dt, Lcl_Dpt_Dt, Lcl_Dpt_Tm, Pax_Id_Nbr from fpnrinfo_analysis where Lcl_Dpt_Dt > \"{x_}\" and Lcl_Dpt_Dt <\"{y_}\" ".format(x_=statr_time ,y_= end_time)
+
         print("fpnr正在远程加载数据，请稍后！")
-        con = pymysql.connect(host='localhost',port = 3306,user='root',db="airportdata",passwd='zzc123456',use_unicode=True,charset="utf8")
+        con = pymysql.connect(host="192.168.2.51", user="ggy", db="ky", passwd="123456", use_unicode=True,
+                             charset="utf8")
+
+        # con = pymysql.connect(host='localhost',port = 3306,user='root',db="airportdata",passwd='zzc123456',use_unicode=True,charset="utf8")
     # cursor = con.cursor()
     # cursor.execute(sql)
+    #     data = pd.read_sql(sql,con)
         data = pd.read_sql(sql,con)
+
+        # print(lines)
+        # data.to_csv('fpnr.csv')
+
         print("数据加载成功！")
+        
 
     except Exception as e:
         print("数据加载异常！")
+        logging.error('连接数据异常:'+ e)
         print(e)
     finally:
         con.close()
     return data
 
 #从远程获取数据prl
-def get_data2():
+def get_data2(statr_time,end_time):
     try:
-        sql = 'select * from prl '
+        sql = 'select flightDate,identityNum,dataTime from prlinfo_2018 where flightDate >  \"{x_}\" and flightDate < \"{y_}\" '.format(x_=statr_time ,y_= end_time)
+
         print('prl数据远程加载中....')
-        con = pymysql.connect(host='localhost', port=3306, user='root', db="airportdata", passwd='zzc123456',
-                          use_unicode=True, charset="utf8")
+        # con = pymysql.connect(host='localhost', port=3306, user='root', db="airportdata", passwd='zzc123456',
+        #                   use_unicode=True, charset="utf8")
+
+        con = pymysql.connect(host="192.168.2.51", user="ggy", db="ky", passwd="123456", use_unicode=True,
+                              charset="utf8")
+
         data = pd.read_sql(sql,con)
+
+        # data.to_csv('prl.csv')
         print("数据加载成功！")
 
     except Exception as e:
         print("数据加载异常！")
+        logging.error('连接数据异常：'+ e)
         print(e)
     finally:
         con.close()
 
     return data
+#重载方法获取prl
+# def get_data2():
+#     try:
+#         #默认选取一个月的数据
+#         sql = 'select flightDate,identityNum,dataTime  from prlinfo_2018 where flightDate < 20180903 and flightDate > 20180901'
+#         # sql = 'select * from prlinfo_2018 limit 100'
+#         print('prl数据远程加载中....')
+#         # con = pymysql.connect(host='localhost', port=3306, user='root', db="airportdata", passwd='zzc123456',
+#         #                   use_unicode=True, charset="utf8")
+#
+#         con = pymysql.connect(host="192.168.2.51", user="ggy", db="ky", passwd="123456", use_unicode=True,
+#                               charset="utf8")
+#
+#         data = pd.read_sql(sql,con)
+#         # data.to_csv('prl.csv')
+#         print("数据加载成功！")
+#
+#     except Exception as e:
+#         print("数据加载异常！")
+#         logging.error('连接数据异常：'+ e)
+#         print(e)
+#     finally:
+#         con.close()
+#
+#     return data
 
 # 数据预处理表1，fpnr
 def process_data(datafile):
@@ -124,7 +169,7 @@ def process_data(datafile):
     data_mean = data_mean.reset_index()  # 重新设置index，将原来的index作为counts的一列。
     # data11.columns = ['index', 'num'] #重新设置列名，主要是第二列，默认为0
     data_mean.columns = ['identityNum', 'avg_day']
-    data_mean.to_csv('./output_data/data_avgday.csv')
+    data_mean.to_csv('../output/data_avgday.csv')
     print('fpnr数据处理成功!')
     return data_mean
 
@@ -133,16 +178,17 @@ def process_data2(datafile):
     # df = pd.read_csv('prl.csv', error_bad_lines=False)
     print('prl数据预处理中...')
     df = pd.DataFrame(datafile)
-    data_deal = df.drop(
-        ['recordId', 'firstName', 'lastName', 'name', 'cnin', 'tkne', 'legNum', 'psm', 'infTkne1', 'legNum1',
-         'infName1', 'infBirth1', 'psm1', 'infTkne2', 'legNum2', 'infName2', 'infBirth2', 'psm2', 'hc', 'vip', 'm', 'n',
-         'o', 'ckin', 'pspt', 'doca', 'asvc', 'rn'], axis=1)
+    # data_deal = df.drop(
+    #     ['recordId', 'firstName', 'lastName', 'name', 'cnin', 'tkne', 'legNum', 'psm', 'infTkne1', 'legNum1',
+    #      'infName1', 'infBirth1', 'psm1', 'infTkne2', 'legNum2', 'infName2', 'infBirth2', 'psm2', 'hc', 'vip', 'm', 'n',
+    #      'o', 'ckin', 'pspt', 'doca', 'asvc', 'rn'], axis=1)
+    #
+    # data = data_deal.drop_duplicates()
+    # data1 = data.drop(
+    #     ['identity', 'psptDate', 'fqtvMark', 'flightNo', 'depAirpt', 'arrvAirpt', 'seatRecord', 'pasType', 'pasSex',
+    #      'seat', 'bn', 'gate', 'psptNum', 'psptOrigo', 'psptOrigo', 'fqtv', 'bugSum', 'bugWegit', 'docs'], axis=1)
 
-    data = data_deal.drop_duplicates()
-    data1 = data.drop(
-        ['identity', 'psptDate', 'fqtvMark', 'flightNo', 'depAirpt', 'arrvAirpt', 'seatRecord', 'pasType', 'pasSex',
-         'seat', 'bn', 'gate', 'psptNum', 'psptOrigo', 'psptOrigo', 'fqtv', 'bugSum', 'bugWegit', 'docs'], axis=1)
-
+    data1 = df.drop_duplicates()
     counts_identityNum = data1['identityNum'].value_counts()
 
     counts_identityNum = counts_identityNum.reset_index()  # 重新设置index，将原来的index作为counts的一列。
@@ -151,8 +197,8 @@ def process_data2(datafile):
 
     counts_identityNum_sort = counts_identityNum.sort_values(by="identityNum", ascending=False)
 
-    data1['order_day'] = pd.to_datetime(data1.flightDate, format="%Y%m%d")
-    data1['day'] = data1.order_day.values.astype('datetime64[D]')
+    data1['order_day'] = pd.to_datetime(data1['flightDate'], format="%Y%m%d")
+    data1['day'] = data1['order_day'].values.astype('datetime64[D]')
 
     data_R = data1.groupby("identityNum").day.max()
 
@@ -172,16 +218,16 @@ def process_data2(datafile):
     R = data_R.drop(['last_data', 'end_day'], axis=1)
     R_sort = R.sort_values(by="identityNum", ascending=False)
 
-    data11 = data1.groupby("identityNum").day.max()
-
-    data11 = data11.reset_index()  # 重新设置index，将原来的index作为counts的一列。
-    # data11.columns = ['index', 'num'] #重新设置列名，主要是第二列，默认为0
-    data11.columns = ['identityNum', 'last_data']
-
-    end_time = 20181001
-    data11['end_day'] = pd.to_datetime(end_time, format="%Y%m%d")
-
-    data11["R"] = data11["end_day"] - data11["last_data"]
+    # data11 = data1.groupby("identityNum").day.max()
+    #
+    # data11 = data11.reset_index()  # 重新设置index，将原来的index作为counts的一列。
+    # # data11.columns = ['index', 'num'] #重新设置列名，主要是第二列，默认为0
+    # data11.columns = ['identityNum', 'last_data']
+    #
+    # end_time = 20181001
+    # data11['end_day'] = pd.to_datetime(end_time, format="%Y%m%d")
+    #
+    # data11["R"] = data11["end_day"] - data11["last_data"]
 
     # counts_R = data11.drop(['last_data', 'end_day', 'R_day', 'R1'], axis=1)
     # counts_R_sort = counts_R.sort_values(by="identityNum", ascending=False)
@@ -195,7 +241,7 @@ def process_data2(datafile):
 
     FR_ok = FR_group.reset_index()  # 重新设置index，将原来的index作为counts的一列。
     FR_ok.columns = ['identityNum', 'R', 'F']  # 重新设置列名，主要是第二列，默认为0
-    FR_ok.to_csv('./output_data/data_RF.csv')
+    FR_ok.to_csv('../output/data_RF.csv')
 
     return FR_ok
 
@@ -210,11 +256,9 @@ def cat_data1_data2(data_RF,data_avgday):
     index1 = RFAvg_day_group['F'] != 0
     index2 = RFAvg_day_group['R'] != 0
     RFAvg_day_group2 = RFAvg_day_group[index1 & index2]
-    RFAvg_day_group2.to_csv('./output_data/RFAvg_day.csv')
+    RFAvg_day_group2.to_csv('../output/RFAvg_day.csv')
     print('两表结合完成！')
     return RFAvg_day_group2
-
-
 
 def main(data):
     print('开始聚类分析...')
@@ -248,22 +292,23 @@ def main(data):
     # 详细输出原始数据及其类别
     r = pd.concat([R, pd.Series(model.labels_, index=R.index)], axis=1)  # 详细输出每个样本对应的类别
     r.columns = list(R.columns) + [u'聚类类别']  # 重命名表头
-    r.to_csv("./output_data/RFAvg_day_labels.csv")  # 保存结果
+    r.to_csv("../output/RFAvg_day_labels.csv")  # 保存结果
 
-    def density_plot(data):  # 自定义作图函数
-        import matplotlib.pyplot as plt
-        plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
-        plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
-        p = data.plot(kind='kde', linewidth=2, subplots=True, sharex=False)
-        [p[i].set_ylabel(u'密度') for i in range(k)]
-        plt.legend()
-        return plt
+    # def density_plot(data):  # 自定义作图函数
+    #     import matplotlib.pyplot as plt
+    #     plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
+    #     plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
+    #     p = data.plot(kind='kde', linewidth=2, subplots=True, sharex=False)
+    #     # p = data.plot(kind='kde', linewidth=2, subplots=True)
+    #     [p[i].set_ylabel(u'密度') for i in range(k)]
+    #     plt.legend()
+    #     return plt
+    #
+    # pic_output = ''  # 概率密度图文件名前缀
+    # for i in tqdm(range(k),desc='聚类图片保存中...'):
+    #     density_plot(R[r[u'聚类类别'] == i]).savefig(u'../output/%s%s.png' % (pic_output, i))
 
-    pic_output = ''  # 概率密度图文件名前缀
-    for i in tqdm(range(k),desc='聚类图片保存中...'):
-        density_plot(R[r[u'聚类类别'] == i]).savefig(u'./output_data/%s%s.png' % (pic_output, i))
-
-    nums, SSE = test_Kmeans_nclusters(data_zs)
+    nums, SSE = Kmeans_nclusters(data_zs)
 
     # 画图，通过观察SSE与k的取值尝试找出合适的k值,SSE是簇内误方差方法，
     # 中文和负号的正常显示
@@ -279,7 +324,7 @@ def main(data):
     ax.set_xlabel("n_clusters", fontsize=18)
     ax.set_ylabel("SSE", fontsize=18)
     fig.suptitle("KMeans", fontsize=20)
-    plt.savefig('./output_data/分类效果图1.png')
+    plt.savefig('../output/分类效果图1.png')
     plt.show()
 
 
@@ -323,38 +368,57 @@ def main(data):
         plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), ncol=1, fancybox=True, shadow=True)
 
     # 显示图形
-    plt.savefig('./output_data/分类效果图2.png')
+    plt.savefig('../output/分类效果图2.png')
     plt.show()
 
 
-    print('聚类分析完成！相关文件请到output_data中查找！')
+    print('聚类分析完成！相关文件请到output中查找！')
+
+def usr():
+    while (1):
+        print('*' * 100)
+        print('旅客聚类分析！')
+        print('请输入所需要聚类数据的日期')
+        global start_time
+        print('请输入开始时间：如20180901')
+        start_time = input()
+        print('请输入结束时间：如20181001')
+        global end_time
+        end_time = input()
+        print('所选时间范围为：',start_time+'-'+end_time)
+
+        # 记录时间
+        s_time = time.time()
+
+        data1 = get_data1(start_time, end_time)
+        print(f'总共读取数据为：{len(data1)}行')
+        data_avgday = process_data(data1)
+        print('数据处理结果为：')
+        print(data_avgday)
+
+        data2 = get_data2(start_time, end_time)
+        print(f'总共读取数据为：{len(data2)}行')
+        data_RF = process_data2(data2)
+        print('数据处理结果为：')
+        print(data_RF)
+
+        data1_data2 = cat_data1_data2(data_RF, data_avgday)
+        # print(data1_data2)
+
+        main(data1_data2)
+
+        time_dif = get_time_dif(s_time)
+        print("程序整个运行时间：", time_dif)
+        print('60秒后自动关闭')
+        time.sleep(60)
+
+        break
 
 
 
 if __name__ == '__main__':
-    #记录时间
+    usr()
 
-
-    start_time = time.time()
-
-    # p = mp.Process(target=get_data1(), args=())
-    # p.start()
-
-    data1 = get_data1()
-    data_avgday = process_data(data1)
-    # print(data_avgday)
-
-    data2 = get_data2()
-    data_RF = process_data2(data2)
-    # print(data_RF)
-
-    data1_data2 = cat_data1_data2(data_RF,data_avgday)
-    # print(data1_data2)
-
-    main(data1_data2)
-
-    time_dif = get_time_dif(start_time)
-    print("程序整个运行时间：", time_dif)
 
 
 
