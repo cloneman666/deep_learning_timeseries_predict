@@ -1,94 +1,116 @@
-import pandas as pd
-import numpy as np
 import torch
-import torch.nn as nn
+import argparse
+import numpy as np
+import pandas as pd
+from torch import nn
+from torch import optim
 import torch.nn.functional as F
-import torch.optim as optim
+import matplotlib.pyplot as plt
+
+from torch.autograd import Variable
+
+from model.utils import *
+from model.Seq2Seq_attention import *
+
+
+def parse_args():
+    """Parse arguments."""
+    # Parameters settings
+    parser = argparse.ArgumentParser(description="PyTorch implementation of paper 'A Dual-Stage Attention-Based Recurrent Neural Network for Time Series Prediction'")
+
+    # Dataset setting
+    parser.add_argument('--dataroot', type=str, default="./data/nasdaq/nasdaq100_padding.csv", help='path to dataset')
+    parser.add_argument('--batchsize', type=int, default=128, help='input batch size [128]')
+    parser.add_argument('--save_model',type=str,default="./data/check_point/best_model.pth",help='save the model')
+
+    # Encoder / Decoder parameters setting
+    parser.add_argument('--nhidden_encoder', type=int, default=128, help='size of hidden states for the encoder m [64, 128]')
+    parser.add_argument('--nhidden_decoder', type=int, default=128, help='size of hidden states for the decoder p [64, 128]')
+    parser.add_argument('--ntimestep', type=int, default=10, help='the number of time steps in the window T [10]')
+
+    # Training parameters setting
+    parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train [10, 200, 500]')
+    parser.add_argument('--lr', type=float, default=0.001, help='learning rate [0.001] reduced by 0.1 after each 10000 iterations')
+
+    # parse the arguments
+    args = parser.parse_args()
+
+    return args
+
+
+def main():
+    """Main pipeline of Seq2Seq_attention."""
+    args = parse_args()
+
+    # Read dataset
+    print("==> Load dataset ...")
+    X, y = read_data(args.dataroot, debug=True)
+
+    # Initialize model
+    print("==> Initialize Seq2Seq_attention model ...")
+    model = Seq2Seq_Att(
+        X,
+        y,
+        args.ntimestep,
+        args.nhidden_encoder,
+        args.nhidden_decoder,
+        args.batchsize,
+        args.lr,
+        args.epochs
+    )
+
+    # Train
+    print("==> Start training ...")
+    model.train(model,args)  # model 输入进去用于保存模型
+
+    # Prediction
+    y_pred = model.test()
+
+    fig1 = plt.figure()
+    plt.semilogy(range(len(model.iter_losses)), model.iter_losses)
+    plt.savefig("./data/pic/1.png")
+    plt.close(fig1)
+
+    fig2 = plt.figure()
+    plt.semilogy(range(len(model.epoch_losses)), model.epoch_losses)
+    plt.savefig("./data/pic/2.png")
+    plt.close(fig2)
+
+    fig3 = plt.figure()
+    plt.plot(y_pred, label='Predicted')
+    plt.plot(model.y[model.train_timesteps:], label="True")
+    plt.legend(loc='upper left')
+    plt.savefig("./data/pic/3.png")
+    plt.close(fig3)
+    print('Finished Training')
+
+def run_model():
+    args = parse_args()
+    print('加载数据...')
+    X, y = read_data(args.dataroot, debug=True)
+    print('运行已经跑好的模型')
+    model = Seq2Seq_Att(
+        X,
+        y,
+        args.ntimestep,
+        args.nhidden_encoder,
+        args.nhidden_decoder,
+        args.batchsize,
+        args.lr,
+        args.epochs
+    )
+
+    model.load_state_dict(torch.load(args.save_model))
+    print('==>模型加载成功！')
+    model.test_model()
+
+if __name__ == '__main__':
+    main()
+    run_model()
 
 
 
-class Config(object):
-    def __init__(self):
-        self.model_name = 'CNN-LSTM'
 
-
-        #加密部分参数encoder
-        self.encoder_inputSize = 16
-        self.encoder_hiddenSize = 64
-        self.dropout = 0.1
-        self.encoder_numlayers = 1
-
-        self.encoder_outputSize = 10
-
-        self.batch_first = True
-        self.bidirectional = True
-
-        #解密部分参数
-        self.decoder_hiddenSize = 64
-        self.decoder_numlayers = 1
-        self.decoder_outputSize = 10  #此项为最终分类的数目
-
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-        self.lr = 0.0005
-
-class Encoder(nn.Module):
-    def __init__(self,config):
-        super(Decoder, self).__init__()
-
-        self.rnn = nn.LSTM(input_size=config.encoder_inputSize,hidden_size=config.encoder_hiddenSize,
-                           num_layers=config.encoder_numlayers,
-                           dropout=(0 if config.encoder_numlayers == 1 else config.dropout),
-                           batch_first=config.batch_first,bidirectional=config.bidirectional
-                           )
-        if config.bidirectional: #是否为双向结构
-            self.fc = nn.Linear(config.hiddenSize * 2,config.encoder_outputSize)
-
-        self.fc = nn.Linear(config.hiddenSize,config.encoder_outputSize)
-
-
-    def forward(self,x): #数据的样子要根据具体情况进行调整
-        output, (h_n, c_n) = self.rnn(x)
-        result = self.fc(output)
-        return result
-
-
-
-class Decoder(nn.Module):
-    def __init__(self,config):
-        super(Decoder, self).__init__()
-        self.rnn = nn.LSTM(input_size=config.encoder_outputSize,hidden_size=config.decoder_hiddenSize,
-                           num_layers=config.decoder_numlayers,dropout=(0 if config.decoder_numlayers ==1 else config.dropout),
-                           batch_first=config.batch_first,bidirectional=config.bidirectional
-                           )
-        if config.bidirectional:
-            self.fc = nn.Linear(config.decoder_hiddenSize * 2,config.decoder_outputSize)
-
-        self.fc = nn.Linear(config.decoder_hiddenSize,config.decoder_outputSize)
-
-    def forward(self,x): #数据的样子要根据具体情况进行调整
-        output, (h_n, c_n) = self.rnn(x)
-        result = self.fc(output)
-        return result
-
-class Seq2Seq(nn.Module):
-    def __init__(self,):
-        super(Seq2Seq, self).__init__()
-        self.config = Config()
-        self.encoder = Encoder(self.config).to(self.config.device)
-        self.decoder = Decoder(self.config).to(self.config.device)
-
-        #损失函数,优化函数等定义
-        self.criterion = nn.CrossEntropyLoss().to(self.config.device)
-
-        self.encoder_optimer = optim.Adam(params=filter(lambda p: p.requires_grad,self.encoder.parameters()),
-                                            lr = self.config.lr)
-
-        self.decoder_optimer = optim.Adam(params=filter(lambda p: p.requires_grad, self.decoder.parameters()),
-                                          lr=self.config.lr)
-
-    def forward(self,x):
-        pass
 
 
 
