@@ -16,12 +16,13 @@ from model.Seq2Seq_attention import *
 def parse_args():
     """Parse arguments."""
     # Parameters settings
-    parser = argparse.ArgumentParser(description="PyTorch implementation of paper 'A Dual-Stage Attention-Based Recurrent Neural Network for Time Series Prediction'")
+    parser = argparse.ArgumentParser(description="Seq2Seq+Att 进行时间序列预测")
 
     # Dataset setting
-    parser.add_argument('--dataroot', type=str, default="./data/nasdaq/nasdaq100_padding.csv", help='path to dataset')
+    # parser.add_argument('--dataroot', type=str, default="./data/nasdaq/nasdaq100_padding.csv", help='path to dataset')
+    parser.add_argument('--dataroot', type=str, default="./data/one_hot_甘.csv", help='path to dataset')
     parser.add_argument('--batchsize', type=int, default=128, help='input batch size [128]')
-    parser.add_argument('--save_model',type=str,default="./data/check_point/best_model.pth",help='save the model')
+    parser.add_argument('--save_model',type=str,default="./data/check_point/best_model_air.pth",help='save the model')
 
     # Encoder / Decoder parameters setting
     parser.add_argument('--nhidden_encoder', type=int, default=128, help='size of hidden states for the encoder m [64, 128]')
@@ -29,8 +30,11 @@ def parse_args():
     parser.add_argument('--ntimestep', type=int, default=10, help='the number of time steps in the window T [10]')
 
     # Training parameters setting
-    parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train [10, 200, 500]')
+    parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train [10, 200, 500]')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate [0.001] reduced by 0.1 after each 10000 iterations')
+
+
+    parser.add_argument('--require_improvement',type=int,default=100,help='默认100个epoch没有提升，就结束训练')
 
     # parse the arguments
     args = parser.parse_args()
@@ -44,7 +48,7 @@ def main():
 
     # Read dataset
     print("==> Load dataset ...")
-    X, y = read_data(args.dataroot, debug=True)
+    X, y = read_data(args.dataroot, debug=False)
 
     # Initialize model
     print("==> Initialize Seq2Seq_attention model ...")
@@ -85,9 +89,11 @@ def main():
     print('Finished Training')
 
 def run_model():
+    print("*"*50)
+
     args = parse_args()
     print('加载数据...')
-    X, y = read_data(args.dataroot, debug=True)
+    X, y = read_data(args.dataroot, debug=False)
     print('运行已经跑好的模型')
     model = Seq2Seq_Att(
         X,
@@ -105,7 +111,7 @@ def run_model():
     model.test_model()
 
 if __name__ == '__main__':
-    main()
+    # main()
     run_model()
 
 

@@ -242,6 +242,9 @@ class Seq2Seq_Att(nn.Module):
         n_iter = 0
 
         best_loss = float('inf') #记录最小的损失，，这里不好加一边训练一边保存的代码
+        all_epoch = 0  #记录进行了多少个epoch
+        last_imporve = 0  # 记录上次校验集loss下降的batch数
+        flag = False  # 记录是否很久没有效果提升，停止训练
 
         start_time = time.time()
         for epoch in range(self.epochs):
@@ -283,20 +286,6 @@ class Seq2Seq_Att(nn.Module):
                 self.epoch_losses[epoch] = np.mean(self.iter_losses[range(
                     epoch * iter_per_epoch, (epoch + 1) * iter_per_epoch)])
 
-            if epoch % 10 == 0:
-                if loss < best_loss:
-                    best_loss = loss
-                    torch.save(model.state_dict(),args.save_model)
-                    imporve = "*"
-                else:
-                    imporve = " "
-                time_dif = utils.get_time_dif(start_time)
-
-                msg = 'Epochs:{0:d},Iterations:{1:d},Loss:{2:.5f},Time:{3} {4}'
-
-                print(msg.format(epoch,n_iter,self.epoch_losses[epoch],time_dif,imporve))
-                # print("Epochs: ", epoch, " Iterations: ", n_iter,
-                #       " Loss: ", self.epoch_losses[epoch] + str(imporve))
 
             if epoch % 10 == 0:
                 y_train_pred = self.test(on_train=True)
@@ -311,6 +300,34 @@ class Seq2Seq_Att(nn.Module):
                          y_test_pred, label='Predicted - Test')
                 plt.legend(loc='upper left')
                 plt.show()
+
+
+            if all_epoch % 10 == 0:
+                if loss < best_loss:
+                    best_loss = loss
+                    torch.save(model.state_dict(),args.save_model)
+                    imporve = "*"
+                    last_imporve = all_epoch
+                else:
+                    imporve = " "
+                time_dif = utils.get_time_dif(start_time)
+
+                msg = 'Epochs:{0:d},Iterations:{1:d},Loss:{2:.5f},Time:{3} {4}'
+
+                print(msg.format(epoch,n_iter,self.epoch_losses[epoch],time_dif,imporve))
+                # print("Epochs: ", epoch, " Iterations: ", n_iter,
+                #       " Loss: ", self.epoch_losses[epoch] + str(imporve))
+            all_epoch = all_epoch + 1
+
+            if all_epoch - last_imporve > args.require_improvement:
+                # 在验证集合上loss超过1000batch没有下降，结束训练
+                print('在校验数据集合上已经很长时间没有提升了，模型自动停止训练')
+                flag = True
+                break
+
+            if flag:
+                break
+
 
     def train_forward(self, X, y_prev, y_gt):
         """Forward pass."""
@@ -376,13 +393,14 @@ class Seq2Seq_Att(nn.Module):
         y_train_pred = self.test(on_train=True)
         y_test_pred = self.test(on_train=False)
         y_pred = np.concatenate((y_train_pred, y_test_pred))
+
         plt.ioff()
         plt.figure()
         plt.plot(range(1, 1 + len(self.y)), self.y, label="True")
-        plt.plot(range(self.T, len(y_train_pred) + self.T),
-                 y_train_pred, label='Predicted - Train')
-        plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),
-                 y_test_pred, label='Predicted - Test')
+
+        plt.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
+
+        plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),y_test_pred, label='Predicted - Test')
         plt.legend(loc='upper left')
         plt.show()
 
