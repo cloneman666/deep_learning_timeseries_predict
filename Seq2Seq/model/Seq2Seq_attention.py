@@ -24,6 +24,28 @@ import torch.nn.functional as F
 import time
 import utils
 
+class Config(object):
+    def __init__(self):
+        self.model_name = 'Seq2Seq_attention'
+
+        self.dataroot = './data/one_hot_甘.csv'
+
+        self.batchsize = 128
+
+        self.save_model = './data/check_point/best_model_air.pth'
+
+        self.nhidden_encoder  = 128
+
+        self.nhidden_decoder  = 128
+
+        self.ntimestep  = 10   #时间窗口，即为T
+
+        self.epochs  = 1000
+
+        self.lr = 0.001
+
+        self.require_improvement = 100   #超过100轮训练没有提升就结束训练
+
 class Encoder(nn.Module):
     """encoder in Seq2Seq_Att."""
 
@@ -179,26 +201,21 @@ class Decoder(nn.Module):
         return Variable(X.data.new(1, X.size(0), self.decoder_num_hidden).zero_())
 
 
-class Seq2Seq_Att(nn.Module):
+class Model(nn.Module):
     """ Seq2Seq_Att Recurrent Neural Network."""
 
-    def __init__(self, X, y, T,
-                 encoder_num_hidden,
-                 decoder_num_hidden,
-                 batch_size,
-                 learning_rate,
-                 epochs,
+    def __init__(self, X, y, config,
                  parallel=False):
         """initialization."""
-        super(Seq2Seq_Att, self).__init__()
-        self.encoder_num_hidden = encoder_num_hidden
-        self.decoder_num_hidden = decoder_num_hidden
-        self.learning_rate = learning_rate
-        self.batch_size = batch_size
+        super(Model, self).__init__()
+        self.encoder_num_hidden = config.nhidden_encoder
+        self.decoder_num_hidden = config.nhidden_decoder
+        self.learning_rate = config.lr
+        self.batch_size = config.batchsize
         self.parallel = parallel
         self.shuffle = False
-        self.epochs = epochs
-        self.T = T
+        self.epochs = config.epochs
+        self.T = config.ntimestep
         self.X = X
         self.y = y
 
@@ -207,11 +224,11 @@ class Seq2Seq_Att(nn.Module):
         print("==> Use accelerator: ", self.device)
 
         self.Encoder = Encoder(input_size=X.shape[1],
-                               encoder_num_hidden=encoder_num_hidden,
-                               T=T).to(self.device)
-        self.Decoder = Decoder(encoder_num_hidden=encoder_num_hidden,
-                               decoder_num_hidden=decoder_num_hidden,
-                               T=T).to(self.device)
+                               encoder_num_hidden=config.nhidden_encoder,
+                               T=config.ntimestep).to(self.device)
+        self.Decoder = Decoder(encoder_num_hidden=config.nhidden_encoder,
+                               decoder_num_hidden=config.nhidden_decoder,
+                               T=config.ntimestep).to(self.device)
 
         # Loss function
         self.criterion = nn.MSELoss()
@@ -232,7 +249,7 @@ class Seq2Seq_Att(nn.Module):
         self.y = self.y - np.mean(self.y[:self.train_timesteps])
         self.input_size = self.X.shape[1]
 
-    def train(self,model,args):  #参数model用于将模型保存时用到
+    def train(self,model,config):  #参数model用于将模型保存时用到
         """Training process."""
         iter_per_epoch = int(
             np.ceil(self.train_timesteps * 1. / self.batch_size))
@@ -291,7 +308,7 @@ class Seq2Seq_Att(nn.Module):
                 y_train_pred = self.test(on_train=True)
                 y_test_pred = self.test(on_train=False)
                 y_pred = np.concatenate((y_train_pred, y_test_pred))
-                plt.ioff()
+                plt.ion()
                 plt.figure()
                 plt.plot(range(1, 1 + len(self.y)), self.y, label="True")
                 plt.plot(range(self.T, len(y_train_pred) + self.T),
@@ -299,13 +316,17 @@ class Seq2Seq_Att(nn.Module):
                 plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),
                          y_test_pred, label='Predicted - Test')
                 plt.legend(loc='upper left')
-                plt.show()
+
+                plt.pause(2)
+                plt.close()
+                # plt.draw()
+                # plt.show()
 
 
             if all_epoch % 10 == 0:
                 if loss < best_loss:
                     best_loss = loss
-                    torch.save(model.state_dict(),args.save_model)
+                    torch.save(model.state_dict(),config.save_model)
                     imporve = "*"
                     last_imporve = all_epoch
                 else:
@@ -319,7 +340,7 @@ class Seq2Seq_Att(nn.Module):
                 #       " Loss: ", self.epoch_losses[epoch] + str(imporve))
             all_epoch = all_epoch + 1
 
-            if all_epoch - last_imporve > args.require_improvement:
+            if all_epoch - last_imporve > config.require_improvement:
                 # 在验证集合上loss超过1000batch没有下降，结束训练
                 print('在校验数据集合上已经很长时间没有提升了，模型自动停止训练')
                 flag = True
