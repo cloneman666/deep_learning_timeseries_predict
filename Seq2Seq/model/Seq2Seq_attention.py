@@ -249,7 +249,7 @@ class Model(nn.Module):
         self.y = self.y - np.mean(self.y[:self.train_timesteps])
         self.input_size = self.X.shape[1]
 
-    def train(self,model,config):  #参数model用于将模型保存时用到
+    def train(self,model,config):  #参数model用于将模型保存时用到，config 用于存储模型位置的时候用到
         """Training process."""
         iter_per_epoch = int(
             np.ceil(self.train_timesteps * 1. / self.batch_size))
@@ -258,7 +258,7 @@ class Model(nn.Module):
 
         n_iter = 0
 
-        best_loss = float('inf') #记录最小的损失，，这里不好加一边训练一边保存的代码
+        best_loss = float('inf') #记录最小的损失，，这里不好加一边训练一边保存的代码，无穷大量
         all_epoch = 0  #记录进行了多少个epoch
         last_imporve = 0  # 记录上次校验集loss下降的batch数
         flag = False  # 记录是否很久没有效果提升，停止训练

@@ -17,48 +17,85 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 import numpy as np
 
-# Training settings
-# parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
-# parser.add_argument('--batch-size', type=int, default=64, metavar='N',
-#                     help='input batch size for training (default: 64)')
-# parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
-#                     help='input batch size for testing (default: 1000)')
-# parser.add_argument('--epochs', type=int, default=10, metavar='N',
-#                     help='number of epochs to train (default: 10)')
-# parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
-#                     help='learning rate (default: 0.01)')
-# parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
-#                     help='SGD momentum (default: 0.5)')
-# parser.add_argument('--no-cuda', action='store_true', default=False,
-#                     help='disables CUDA training')
-# parser.add_argument('--seed', type=int, default=1, metavar='S',
-#                     help='random seed (default: 1)')
-# parser.add_argument('--log-interval', type=int, default=10, metavar='N',
-#                     help='how many batches to wait before logging training status')
-# args = parser.parse_args()
-
 
 class Config(object):
     def __init__(self):
         self.model_name = 'CNN_LSTM'
 
-        self.cuda = True
-        self.no_cuda = False
-        self.seed = 1
+        self.dataroot = './data/one_hot_甘.csv'
+
+        self.save_model = './data/check_point/best_model_air.pth'
+
+        self.nhidden_encoder = 128
+
+        self.nhidden_decoder = 128
+
+        self.ntimestep = 10  # 时间窗口，即为T
+
+        self.epochs = 1000
+
+        self.lr = 0.001
+
+        self.require_improvement = 100  # 超过100轮训练没有提升就结束训练
+
         self.batch_size = 50
+
         self.test_batch_size = 1000
-        self.epochs = 10
-        self.lr = 0.01
+
         self.momentum = 0.5
+
         self.log_interval = 10
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        self.feature_size = 20
+
+        self.window_sizes = [3,4,5,6]
+
+        self.max_text_len = 20
+
+        self.num_class = 10
+
+# https://blog.csdn.net/sunny_xsc1994/article/details/82969867
+
+# https://discuss.pytorch.org/t/multi-step-time-series-lstm-network/41670/6
+
+
+class TimeSeriesCNN(nn.Module):
+    def __init__(self):
+        super(TimeSeriesCNN, self).__init__()
+        kernel_sizes = [4, 5, 6]
+        ts_len = 19 # length of time series
+        hid_size = 100
+        self.convs = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv1d(
+                    in_channels=19,
+                    out_channels=10,
+                    kernel_size=kernel_size,
+                ),
+                nn.ReLU(),
+                nn.MaxPool1d(kernel_size=ts_len - kernel_size + 1))
+            for kernel_size in kernel_sizes
+        ])
+        self.fc = nn.Linear(
+            in_features=hid_size * len(kernel_sizes),
+            out_features=3,
+        )
+
+    def forward(self, x):
+        x = x.permute(0,2,1)
+        output = [conv(x) for conv in self.convs]
+        output = torch.cat(output, dim=1)
+        output = output.view(output.size(1), -1)
+        output = self.fc(output)
+        return output
 
 
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
+        self.conv1 = nn.Conv2d(19, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
         self.conv2_drop = nn.Dropout2d()
         self.fc1 = nn.Linear(320, 50)
@@ -84,7 +121,7 @@ class Model(nn.Module):
             hidden_size=64,
             num_layers=1,
             batch_first=True)
-        self.linear = nn.Linear(64, 10)
+        self.linear = nn.Linear(64, 3)
 
     def forward(self, x):
         batch_size, timesteps, C, H, W = x.size()

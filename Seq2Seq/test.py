@@ -8,10 +8,11 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 from torch.autograd import Variable
-
-from model.utils import *
+from torch.utils.data import DataLoader
+from model.utils import *  #每个函数内部的方法
 from model.Seq2Seq_attention import *
-from importlib import import_module
+from importlib import import_module  #动态加载不同的模块
+import utils   #这个为计算时间的方法，为公共方法，所以定义在外面
 
 def parse_args():
     """Parse arguments."""
@@ -19,7 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq+Att 进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='CNN_LSTM',help='choose a model Seq2Seq_attention、CNN_LSTM')
+    parser.add_argument('--model_name',type=str,default='Seq2Seq',help='choose a model Seq2Seq、Seq2Seq_attention、CNN_LSTM')
 
     # Dataset setting
     # parser.add_argument('--dataroot', type=str, default="./data/nasdaq/nasdaq100_padding.csv", help='path to dataset')
@@ -111,6 +112,7 @@ def run_model():
     model.test_model()
 
 if __name__ == '__main__':
+    # main 和run_model 两个函数为模型：Seq2Seq_attention
     # main()
     # run_model()
 
@@ -118,7 +120,47 @@ if __name__ == '__main__':
     model_name = args.model_name
     x = import_module('model.' + model_name)
     config = x.Config()
-    print(config)
+    model = x.TimeSeriesCNN()
+    print('当前使用的模型为：'+ model_name)
+
+    optimizer = optim.Adam(model.parameters(),lr=0.001)
+
+    criterion = nn.MSELoss()
+
+    num_epochs = 100
+
+    # Read dataset
+    print("==> Load dataset ...")
+    # ntime_steps   为时间窗口
+    # n_next        为想要预测的天数
+    dataset = MyDataset(ntime_steps=10,n_next=3)
+
+    dataloader = DataLoader(dataset=dataset,batch_size=2)
+
+    for epoch in range(num_epochs):
+        print(f'Starting epoch {epoch+1}/{num_epochs}')
+
+        model.train()
+        for i,train_data in enumerate(dataloader):
+            # print(i)
+            # print(type(train_data[0]),type(train_data[1]))
+
+            
+            train_x ,train_y= train_data[0],train_data[1]
+
+            # print(train_x.float(),train_y.float())
+
+            output = model(train_x.float())
+
+            loss = criterion(output,train_y)
+        # print(train_x,train_y)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+
+
+
 
 
 
