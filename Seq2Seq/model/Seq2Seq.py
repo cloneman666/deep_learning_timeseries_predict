@@ -10,8 +10,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import utils
+from model.utils import *
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 
 class Config(object):
     def __init__(self):
@@ -97,7 +99,7 @@ class Seq2Seq(nn.Module):
     def train(self,model,config,dataloader):
         print('==>开始训练...')
         best_loss = float('inf')  # 记录最小的损失，，这里不好加一边训练一边保存的代码，无穷大量
-
+        all_epoch = 0  # 记录进行了多少个epoch
         last_imporve = 0  # 记录上次校验集loss下降的batch数
         flag = False  # 记录是否很久没有效果提升，停止训练
 
@@ -126,13 +128,30 @@ class Seq2Seq(nn.Module):
                 self.encoder_optimizer.step()
                 self.decoder_optimizer.step()
 
+            # if epoch % 10 == 0:
+            #     # y_train_pred = self.test(on_train=True)
+            #     # y_test_pred = self.test(on_train=False)
+            #     # y_pred = np.concatenate((y_train_pred, y_test_pred))
+            #     hh1,hh2 = get_data(ntime_steps=config.ntime_steps, n_next=config.n_next)
+            #
+            #     plt.ion()
+            #     plt.figure()
+            #     plt.plot(range(1, 1 + len(self.y)), self.y, label="True")
+            #     plt.plot(range(self.T, len(y_train_pred) + self.T),
+            #              y_train_pred, label='Predicted - Train')
+            #     # plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),
+            #     #          y_test_pred, label='Predicted - Test')
+            #     plt.legend(loc='upper left')
+            #
+            #     plt.pause(2)
+            #     plt.close()
 
-            if epoch % 10 == 0:
+            if all_epoch % 10 == 0:
                 if loss < best_loss:
                     best_loss = loss
                     torch.save(model.state_dict(), config.save_model)
                     imporve = "*"
-                    last_imporve = epoch
+                    last_imporve = all_epoch
                 else:
                     imporve = " "
                 time_dif = utils.get_time_dif(start_time)
@@ -141,9 +160,9 @@ class Seq2Seq(nn.Module):
 
                 print(msg.format(epoch,loss.item(), time_dif, imporve))
 
-            # epoch = epoch + 1
+            all_epoch = all_epoch + 1
 
-            if epoch - last_imporve > config.require_improvement:
+            if all_epoch - last_imporve > config.require_improvement:
                 # 在验证集合上loss超过1000batch没有下降，结束训练
                 print('在校验数据集合上已经很长时间没有提升了，模型自动停止训练')
                 flag = True
