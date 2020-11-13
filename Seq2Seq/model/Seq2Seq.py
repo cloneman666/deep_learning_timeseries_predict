@@ -9,19 +9,29 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
+import utils
+import time
 import numpy as np
 
 class Config(object):
     def __init__(self):
         self.model_name = 'Seq2Seq'
 
+        self.batch_size  = 128
+
+        self.ntime_steps = 10 #为时间窗口
+        self.n_next = 1       #为往后预测的天数
+
         self.input_size = 19   #输入数据的维度
         self.hidden_dim = 128  #隐藏层的大小
 
         self.num_layers = 1
+        self.epochs  = 1000
+        self.lr = 0.001
 
-        self.epochs  = 100
+        self.require_improvement = 100
+
+        self.save_model = './data/check_point/best_seq2seq_model_air.pth'
 
 class Encoder(nn.Module):
 
@@ -36,8 +46,8 @@ class Encoder(nn.Module):
         self.hidden = None
 
     def init_hidden(self, batch_size):
-        return (torch.zeros(self.num_layers, batch_size, self.hidden_dim),
-                torch.zeros(self.num_layers, batch_size, self.hidden_dim))
+        return (torch.zeros(self.num_layers,batch_size,self.hidden_dim),
+                torch.zeros(self.num_layers,batch_size,self.hidden_dim))
 
     def forward(self, inputs):
         # Push through RNN layer (the ouput is irrelevant)
@@ -73,19 +83,74 @@ class Decoder(nn.Module):
         return loss
 
 
-class Seq2Seq:
+class Seq2Seq(nn.Module):
     def __init__(self,config):
-        self.encoder = Encoder(config.input_size,config.hidden_dim)
-        self.decoder = Decoder(config.hidden_dim)
+        super(Seq2Seq, self).__init__()
+        self.encoder = Encoder(config)
+        self.decoder = Decoder(config)
 
-        self.encoder_optimizer = optim.Adam(self.encoder.parameters(), lr=0.001)
-        self.decoder_optimizer = optim.Adam(self.decoder.parameters(), lr=0.001)
+        self.encoder_optimizer = optim.Adam(self.encoder.parameters(), lr=config.lr)
+        self.decoder_optimizer = optim.Adam(self.decoder.parameters(), lr=config.lr)
 
         self.criterion = nn.MSELoss()
 
-    def train(self,config):
-        pass
+    def train(self,model,config,dataloader):
+        print('==>开始训练...')
+        best_loss = float('inf')  # 记录最小的损失，，这里不好加一边训练一边保存的代码，无穷大量
 
+        last_imporve = 0  # 记录上次校验集loss下降的batch数
+        flag = False  # 记录是否很久没有效果提升，停止训练
+
+        start_time = time.time()
+
+        for epoch in range(config.epochs):
+
+            for i,train_data in enumerate(dataloader):
+
+                train_x ,train_y= torch.tensor(train_data[0],dtype=torch.float),torch.tensor(train_data[1],dtype=torch.float)
+                train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
+                train_y = train_y.squeeze(2)   #将最后的1去掉
+
+                self.encoder_optimizer.zero_grad()
+                self.decoder_optimizer.zero_grad()
+
+                # Reset hidden state of encoder for current batch
+                self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1])
+                # Do forward pass through encoder
+                hidden = self.encoder(train_x)
+                # Do forward pass through decoder (decoder gets hidden state from encoder)
+                loss = self.decoder(train_y, hidden, self.criterion)
+                # Backpropagation
+                loss.backward()
+                # Update parameters
+                self.encoder_optimizer.step()
+                self.decoder_optimizer.step()
+
+
+            if epoch % 10 == 0:
+                if loss < best_loss:
+                    best_loss = loss
+                    torch.save(model.state_dict(), config.save_model)
+                    imporve = "*"
+                    last_imporve = epoch
+                else:
+                    imporve = " "
+                time_dif = utils.get_time_dif(start_time)
+
+                msg = 'Epochs:{0:d},Loss:{1:.5f},Time:{2} {3}'
+
+                print(msg.format(epoch,loss.item(), time_dif, imporve))
+
+            # epoch = epoch + 1
+
+            if epoch - last_imporve > config.require_improvement:
+                # 在验证集合上loss超过1000batch没有下降，结束训练
+                print('在校验数据集合上已经很长时间没有提升了，模型自动停止训练')
+                flag = True
+                break
+
+            if flag:
+                break
 
 
 

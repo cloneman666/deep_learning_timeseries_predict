@@ -40,15 +40,15 @@ def read_all_data(input_path):
 
 
 
-def get_data():
+def get_data(ntime_steps,n_next):
     import pandas as pd
 
     one_hot_data = pd.read_csv('./data/one_hot_甘.csv')
     one_hot_data2 = one_hot_data.drop(['ds', 'Cls_Cd_Y', 'start_time'], axis=1)
 
-    ntime_steps = 10  # 时间窗口T
+    ntime_steps = ntime_steps  # 时间窗口T
 
-    n_next = 3
+    n_next = n_next
 
     y_data = one_hot_data2.iloc[:, -1:].values
 
@@ -83,7 +83,7 @@ def create_dataset(data, ntime_steps, n_next):
 # 创建一个自己的数据集
 class MyDataset(Dataset):
     def __init__(self,ntime_steps,n_next):
-        self.X ,self.Y = get_data()
+        self.X ,self.Y = get_data(ntime_steps,n_next)
 
     def __getitem__(self, item):
         return self.X[item],self.Y[item]
