@@ -22,7 +22,7 @@ class Config(object):
         self.batch_size  = 128
 
         self.ntime_steps = 10 #为时间窗口
-        self.n_next = 1       #为往后预测的天数
+        self.n_next = 3       #为往后预测的天数
 
         self.input_size = 19   #输入数据的维度
         self.hidden_dim = 128  #隐藏层的大小
@@ -68,7 +68,7 @@ class Decoder(nn.Module):
     def forward(self, outputs, hidden, criterion):
         batch_size, num_steps = outputs.shape
         # Create initial start value/token
-        input = torch.tensor([[0.0]] * batch_size, dtype=torch.float)
+        input = torch.tensor([[0.0]] * batch_size, dtype=torch.float32)
         # Convert (batch_size, output_size) to (seq_len, batch_size, output_size)
         input = input.unsqueeze(0)
 
@@ -81,8 +81,10 @@ class Decoder(nn.Module):
             # Generate input for next step by adding seq_len dimension (see above)
             input = output.unsqueeze(0)
             # Compute loss between predicted value and true value
+            # output.squeeze(1)  去除警告，将特定维度降低
+            output = output.squeeze(1)
             loss += criterion(output, outputs[:, i])
-        return loss
+        return output,loss
 
 
 class Seq2Seq(nn.Module):
@@ -109,7 +111,7 @@ class Seq2Seq(nn.Module):
 
             for i,train_data in enumerate(dataloader):
 
-                train_x ,train_y= torch.tensor(train_data[0],dtype=torch.float),torch.tensor(train_data[1],dtype=torch.float)
+                train_x ,train_y= torch.as_tensor(train_data[0],dtype=torch.float32),torch.as_tensor(train_data[1],dtype=torch.float32)
                 train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
                 train_y = train_y.squeeze(2)   #将最后的1去掉
 
@@ -121,30 +123,38 @@ class Seq2Seq(nn.Module):
                 # Do forward pass through encoder
                 hidden = self.encoder(train_x)
                 # Do forward pass through decoder (decoder gets hidden state from encoder)
-                loss = self.decoder(train_y, hidden, self.criterion)
+                output , loss = self.decoder(train_y, hidden, self.criterion)
                 # Backpropagation
                 loss.backward()
                 # Update parameters
                 self.encoder_optimizer.step()
                 self.decoder_optimizer.step()
 
-            # if epoch % 10 == 0:
-            #     # y_train_pred = self.test(on_train=True)
-            #     # y_test_pred = self.test(on_train=False)
-            #     # y_pred = np.concatenate((y_train_pred, y_test_pred))
-            #     hh1,hh2 = get_data(ntime_steps=config.ntime_steps, n_next=config.n_next)
-            #
-            #     plt.ion()
-            #     plt.figure()
-            #     plt.plot(range(1, 1 + len(self.y)), self.y, label="True")
-            #     plt.plot(range(self.T, len(y_train_pred) + self.T),
-            #              y_train_pred, label='Predicted - Train')
-            #     # plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),
-            #     #          y_test_pred, label='Predicted - Test')
-            #     plt.legend(loc='upper left')
-            #
-            #     plt.pause(2)
-            #     plt.close()
+            if epoch % 10 == 0:
+                # y_train_pred = self.test(on_train=True)
+                # y_test_pred = self.test(on_train=False)
+                # y_pred = np.concatenate((y_train_pred, y_test_pred))
+                # hh1,hh2 = get_data(ntime_steps=config.ntime_steps, n_next=config.n_next)
+
+                y_true = read_all_data('./data/one_hot_甘.csv')['y']
+
+                plt.ion()
+                plt.figure()
+
+                plt.plot(range(1,1 + len(y_true)),y_true,label="True")
+                # plt.plot(range(1,1 + len(output.detach().numpy())),output.detach().numpy(),label="Test")
+
+                plt.plot(range(config.ntime_steps,len(output.detach().numpy()) + config.ntime_steps),output.detach().numpy(),label="Predicted")
+
+                # plt.plot(range(1, 1 + len(self.y)), self.y, label="True")
+
+                # plt.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
+                # plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),y_test_pred, label='Predicted - Test')
+
+                plt.legend(loc='upper left')
+
+                plt.pause(2)
+                plt.close()
 
             if all_epoch % 10 == 0:
                 if loss < best_loss:
@@ -173,3 +183,38 @@ class Seq2Seq(nn.Module):
 
 
 
+    def test(self, on_train=True):
+        """Prediction."""
+
+        if on_train:
+            y_pred = np.zeros(self.train_timesteps - self.T + 1)
+        else:
+            y_pred = np.zeros(self.X.shape[0] - self.train_timesteps)
+
+        i = 0
+        while i < len(y_pred):
+            batch_idx = np.array(range(len(y_pred)))[i: (i + self.batch_size)]
+            X = np.zeros((len(batch_idx), self.T - 1, self.X.shape[1]))
+            y_history = np.zeros((len(batch_idx), self.T - 1))
+
+            for j in range(len(batch_idx)):
+                if on_train:
+                    X[j, :, :] = self.X[range(
+                        batch_idx[j], batch_idx[j] + self.T - 1), :]
+                    y_history[j, :] = self.y[range(
+                        batch_idx[j], batch_idx[j] + self.T - 1)]
+                else:
+                    X[j, :, :] = self.X[range(
+                        batch_idx[j] + self.train_timesteps - self.T, batch_idx[j] + self.train_timesteps - 1), :]
+                    y_history[j, :] = self.y[range(
+                        batch_idx[j] + self.train_timesteps - self.T, batch_idx[j] + self.train_timesteps - 1)]
+
+            y_history = torch.from_numpy(y_history).type(torch.FloatTensor)
+
+            _, input_encoded = self.Encoder(torch.from_numpy(X).type(torch.FloatTensor))
+
+            y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
+
+            i += self.batch_size
+
+        return y_pred

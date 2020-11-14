@@ -399,12 +399,12 @@ class Model(nn.Module):
                     y_history[j, :] = self.y[range(
                         batch_idx[j] + self.train_timesteps - self.T, batch_idx[j] + self.train_timesteps - 1)]
 
-            y_history = Variable(torch.from_numpy(
-                y_history).type(torch.FloatTensor).to(self.device))
-            _, input_encoded = self.Encoder(
-                Variable(torch.from_numpy(X).type(torch.FloatTensor).to(self.device)))
-            y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,
-                                                           y_history).cpu().data.numpy()[:, 0]
+            y_history = Variable(torch.from_numpy(y_history).type(torch.FloatTensor).to(self.device))
+
+            _, input_encoded = self.Encoder(Variable(torch.from_numpy(X).type(torch.FloatTensor).to(self.device)))
+
+            y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
+
             i += self.batch_size
 
         return y_pred

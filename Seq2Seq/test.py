@@ -151,20 +151,6 @@ if __name__ == '__main__':
     # outputs = torch.tensor(np.array(outputs), dtype=torch.float)
     # print(outputs.shape)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     # optimizer = optim.Adam(model.parameters(),lr=0.001)
     #
     # criterion = nn.MSELoss()
