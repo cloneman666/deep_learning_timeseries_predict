@@ -22,7 +22,7 @@ class Config(object):
         self.batch_size  = 128
 
         self.ntime_steps = 10 #为时间窗口
-        self.n_next = 3       #为往后预测的天数
+        self.n_next = 1       #为往后预测的天数
 
         self.input_size = 19   #输入数据的维度
         self.hidden_dim = 128  #隐藏层的大小
@@ -34,6 +34,12 @@ class Config(object):
         self.require_improvement = 100
 
         self.save_model = './data/check_point/best_seq2seq_model_air.pth'
+
+        self.device = torch.device(
+            'cuda:0' if torch.cuda.is_available() else 'cpu')
+
+
+        # print("==> Use accelerator: ", self.device)
 
 class Encoder(nn.Module):
 
@@ -130,31 +136,37 @@ class Seq2Seq(nn.Module):
                 self.encoder_optimizer.step()
                 self.decoder_optimizer.step()
 
-            if epoch % 10 == 0:
-                # y_train_pred = self.test(on_train=True)
-                # y_test_pred = self.test(on_train=False)
-                # y_pred = np.concatenate((y_train_pred, y_test_pred))
-                # hh1,hh2 = get_data(ntime_steps=config.ntime_steps, n_next=config.n_next)
+            test(self, train_x, train_y,epoch)   # 可视化训练中的实际情况
 
-                y_true = read_all_data('./data/one_hot_甘.csv')['y']
-
-                plt.ion()
-                plt.figure()
-
-                plt.plot(range(1,1 + len(y_true)),y_true,label="True")
-                # plt.plot(range(1,1 + len(output.detach().numpy())),output.detach().numpy(),label="Test")
-
-                plt.plot(range(config.ntime_steps,len(output.detach().numpy()) + config.ntime_steps),output.detach().numpy(),label="Predicted")
-
-                # plt.plot(range(1, 1 + len(self.y)), self.y, label="True")
-
-                # plt.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
-                # plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),y_test_pred, label='Predicted - Test')
-
-                plt.legend(loc='upper left')
-
-                plt.pause(2)
-                plt.close()
+            # 画图部分暂时不画
+            # if epoch % 10 == 0:
+            #     # y_train_pred = self.test(on_train=True)
+            #     # y_test_pred = self.test(on_train=False)
+            #     # y_pred = np.concatenate((y_train_pred, y_test_pred))
+            #     # hh1,hh2 = get_data(ntime_steps=config.ntime_steps, n_next=config.n_next)
+            #
+            #     y_true = read_all_data('./data/one_hot_甘.csv')['y']
+            #
+            #     plt.ion()
+            #     plt.figure()
+            #
+            #
+            #     plt.plot(range(1,1 + len(y_true)),y_true,label="True")
+            #     # plt.plot(range(1,1 + len(output.detach().numpy())),output.detach().numpy(),label="Test")
+            #
+            #     # plt.plot(range(config.ntime_steps,len(output.detach().numpy()) + config.ntime_steps),output.detach().numpy(),label="Predicted")
+            #
+            #     # plt.plot(range(config.ntime_steps,config.ntime_steps + len(y_pred)),y_pred,label="Predicted")
+            #
+            #     # plt.plot(range(1, 1 + len(self.y)), self.y, label="True")
+            #
+            #     # plt.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
+            #     # plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),y_test_pred, label='Predicted - Test')
+            #
+            #     plt.legend(loc='upper left')
+            #
+            #     plt.pause(2)
+            #     plt.close()
 
             if all_epoch % 10 == 0:
                 if loss < best_loss:
@@ -182,39 +194,50 @@ class Seq2Seq(nn.Module):
                 break
 
 
+        # 该函数没有成功
+    def test_model(self):
+        # 加载全部数据进行测试
+        data_x = read_all_data('./data/one_hot_甘.csv').drop('y',axis=1)
+        data_y = read_all_data('./data/one_hot_甘.csv')['y']
 
-    def test(self, on_train=True):
-        """Prediction."""
+        train_x, train_y = torch.as_tensor(data_x.values, dtype=torch.float32), torch.as_tensor(data_y.values,dtype=torch.float32)
+        train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
+        # train_y = train_y.squeeze(2)  # 将最后的1去掉
 
-        if on_train:
-            y_pred = np.zeros(self.train_timesteps - self.T + 1)
-        else:
-            y_pred = np.zeros(self.X.shape[0] - self.train_timesteps)
+        self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1])
+        # Do forward pass through encoder
+        hidden = self.encoder(train_x)
+        # Do forward pass through decoder (decoder gets hidden state from encoder)
+        output, loss = self.decoder(train_y, hidden, self.criterion)
 
-        i = 0
-        while i < len(y_pred):
-            batch_idx = np.array(range(len(y_pred)))[i: (i + self.batch_size)]
-            X = np.zeros((len(batch_idx), self.T - 1, self.X.shape[1]))
-            y_history = np.zeros((len(batch_idx), self.T - 1))
+        plt.ion()
+        plt.figure()
+        plt.plot(range(1, 1 + len(train_y)), train_y, label="True")
+        plt.plot(range(1, 1 + len(output.detach().numpy())), output.detach().numpy(), label="Test")
+        plt.legend()
+        plt.pause(1)
+        plt.close()
 
-            for j in range(len(batch_idx)):
-                if on_train:
-                    X[j, :, :] = self.X[range(
-                        batch_idx[j], batch_idx[j] + self.T - 1), :]
-                    y_history[j, :] = self.y[range(
-                        batch_idx[j], batch_idx[j] + self.T - 1)]
-                else:
-                    X[j, :, :] = self.X[range(
-                        batch_idx[j] + self.train_timesteps - self.T, batch_idx[j] + self.train_timesteps - 1), :]
-                    y_history[j, :] = self.y[range(
-                        batch_idx[j] + self.train_timesteps - self.T, batch_idx[j] + self.train_timesteps - 1)]
 
-            y_history = torch.from_numpy(y_history).type(torch.FloatTensor)
+#这个函数为边训练边测试的函数
+def test(self,train_x,train_y,epoch):
 
-            _, input_encoded = self.Encoder(torch.from_numpy(X).type(torch.FloatTensor))
+    with torch.no_grad():
 
-            y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
 
-            i += self.batch_size
+        self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1])
+                # Do forward pass through encoder
+        hidden = self.encoder(train_x)
+                # Do forward pass through decoder (decoder gets hidden state from encoder)
+        output, loss = self.decoder(train_y, hidden, self.criterion)
 
-        return y_pred
+        if epoch % 10 == 0:
+
+            plt.ion()
+            plt.figure()
+            plt.plot(range(1, 1 + len(train_y)),train_y,label="True")
+            plt.plot(range(1, 1 + len(output.detach().numpy())), output.detach().numpy(), label="Test")
+            plt.legend()
+            plt.pause(1)
+            plt.close()
+

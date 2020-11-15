@@ -35,12 +35,18 @@ def read_data(input_path, debug=False):
 #自定义方法，除去部分内容
 def read_all_data(input_path):
     df = pd.read_csv(input_path)
-    df = df.drop(['ds','Cls_Cd_Y'],axis=1)
+    df = df.drop(['ds','Cls_Cd_Y','start_time'],axis=1)
     return df
 
 
 
 def get_data(ntime_steps,n_next):
+    """
+    将数据划分为X 和 Y
+    :param ntime_steps: 时间窗口
+    :param n_next:    想要预测后面的天数
+    :return:
+    """
     import pandas as pd
 
     one_hot_data = pd.read_csv('./data/one_hot_甘.csv')
@@ -61,9 +67,13 @@ def get_data(ntime_steps,n_next):
 
 # 划分数据集函数
 def create_dataset(data, ntime_steps, n_next):
-    '''
-    对数据进行处理,划分数据集
-    '''
+    """
+    划分数据集，用前多少天，预测后面多少天
+    :param data:
+    :param ntime_steps:
+    :param n_next:
+    :return:
+    """
     #     dim = data.shape[1]
     train_X, train_Y = [], []
     for i in range(data.shape[0] - ntime_steps - n_next - 1):
@@ -82,6 +92,9 @@ def create_dataset(data, ntime_steps, n_next):
 
 # 创建一个自己的数据集
 class MyDataset(Dataset):
+    """
+    将数据集进行内部函数的划分
+    """
     def __init__(self,ntime_steps,n_next):
         self.X ,self.Y = get_data(ntime_steps,n_next)
 

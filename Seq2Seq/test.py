@@ -20,7 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq类模型进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='Seq2Seq',help='choose a model Seq2Seq、Seq2Seq_attention、CNN_LSTM')
+    parser.add_argument('--model_name',type=str,default='Seq2Seq_attention',help='choose a model Seq2Seq、Seq2Seq_attention、CNN_LSTM')
 
     args = parser.parse_args()
 
@@ -96,95 +96,36 @@ if __name__ == '__main__':
 
     #####        main 和run_model 两个函数为模型：Seq2Seq_attention
     # main()
-    # run_model()
+    run_model()
+
+
+
+
+
+
+
+    #后面的内容为Seq2Seq 模型的代码
+    # args = parse_args()  # 加载所选模型的名字
+    # model_name = args.model_name
+    # x = import_module('model.' + model_name)
+    # config = x.Config()  #加载模型的配置
+    # model = x.Seq2Seq(config)   #加载模型
+    # print('==>当前使用的模型为：'+ model_name)
     #
-    args = parse_args()  # 加载所选模型的名字
-    model_name = args.model_name
-    x = import_module('model.' + model_name)
-    config = x.Config()  #加载模型的配置
-    model = x.Seq2Seq(config)   #加载模型
-    print('==>当前使用的模型为：'+ model_name)
-
-    print('==>加载数据中...')
-    # ntime_steps   为时间窗口T
-    # n_next        为想要预测的天数
-    dataset = MyDataset(ntime_steps=config.ntime_steps,n_next=config.n_next)
-    dataloader = DataLoader(dataset=dataset,batch_size=config.batch_size,shuffle=False)
-
-
-    model.train(model,config,dataloader)
-
-    # print("*"*50)
-    # inputs = [
-    #     [
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #     ],
-    #     [
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #         [0.5, 0.2, 0.3, 0.4, 0.1],
-    #     ]
-    # ]
-    #
-    # inputs = torch.tensor(np.array(inputs), dtype=torch.float)
-    # # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
-    # inputs = inputs.transpose(1, 0)
-    # print(inputs.shape)
-
-    # outputs = [[0.1, 0.2, 0.3, 0.1, 0.2, 0.3], [0.3, 0.2, 0.1, 0.3, 0.2, 0.1]]
-    # outputs = torch.tensor(np.array(outputs), dtype=torch.float)
-    # print(outputs.shape)
-
-    # optimizer = optim.Adam(model.parameters(),lr=0.001)
-    #
-    # criterion = nn.MSELoss()
-    #
-    # num_epochs = 100
-    #
-    # # Read dataset
-    # print("==> Load dataset ...")
-    # # ntime_steps   为时间窗口
+    # print('==>加载数据中...')
+    # # ntime_steps   为时间窗口T
     # # n_next        为想要预测的天数
-    # dataset = MyDataset(ntime_steps=10,n_next=3)
-    #
-    # dataloader = DataLoader(dataset=dataset,batch_size=2,shuffle=False)
-    #
-    # for epoch in range(num_epochs):
-    #     print(f'Starting epoch {epoch+1}/{num_epochs}')
-    #
-    #     model.train()
-    #     for i,train_data in enumerate(dataloader):
-    #         # print(i)
-    #         # print(type(train_data[0]),type(train_data[1]))
+    # dataset = MyDataset(ntime_steps=config.ntime_steps,n_next=config.n_next)
+    # dataloader = DataLoader(dataset=dataset,batch_size=config.batch_size,shuffle=False)
     #
     #
-    #         train_x ,train_y= train_data[0],train_data[1]
+    # # model.train(model,config,dataloader)  # Seq2Seq训练模型
     #
-    #         # print(train_x.float(),train_y.float())
-    #
-    #         output = model(train_x.float())
-    #
-    #         loss = criterion(output,train_y)
-    #     # print(train_x,train_y)
-    #         optimizer.zero_grad()
-    #         loss.backward()
-    #         optimizer.step()
+    # model.test_model()
+
+
+
+
 
 
 
