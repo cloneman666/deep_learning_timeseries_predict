@@ -36,6 +36,7 @@ def read_data(input_path, debug=False):
 def read_all_data(input_path):
     df = pd.read_csv(input_path)
     df = df.drop(['ds','Cls_Cd_Y','start_time'],axis=1)
+    # print(df.info())
     return df
 
 
@@ -51,6 +52,9 @@ def get_data(ntime_steps,n_next):
 
     one_hot_data = pd.read_csv('./data/one_hot_甘.csv')
     one_hot_data2 = one_hot_data.drop(['ds', 'Cls_Cd_Y', 'start_time'], axis=1)
+
+    # print(one_hot_data2.head())
+
 
     ntime_steps = ntime_steps  # 时间窗口T
 
@@ -77,7 +81,7 @@ def create_dataset(data, ntime_steps, n_next):
     #     dim = data.shape[1]
     train_X, train_Y = [], []
     for i in range(data.shape[0] - ntime_steps - n_next - 1):
-        a = data[i:(i + ntime_steps), :-1]  # 自定义X
+        a = data[i:(i + ntime_steps), :]  # 自定义X
         train_X.append(a)
         tempb = data[(i + ntime_steps):(i + ntime_steps + n_next)]
 

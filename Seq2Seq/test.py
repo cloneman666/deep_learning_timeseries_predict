@@ -27,8 +27,11 @@ def parse_args():
     return args
 
 
-def main():
-
+def main_Seq2Seq_Att():
+    """
+    该函数为训练Seq2Seq_Att模型的函数
+    :return:
+    """
     args = parse_args() #加载所选模型的名字
     model_name = args.model_name
     x = import_module('model.'+ model_name)
@@ -71,7 +74,11 @@ def main():
     plt.close(fig3)
     print('Finished Training')
 
-def run_model():
+def run_Seq2Seq_Att_model():
+    """
+    该函数为测试Seq2Seq_Att模型的函数
+    :return:
+    """
     print("*"*50)
 
     args = parse_args()  # 加载所选模型的名字
@@ -92,36 +99,78 @@ def run_model():
     print('==>模型加载成功！')
     model.test_model()
 
+def main_Seq2Seq():
+    """
+    模型为Seq2Seq 模型的代码
+    :return:
+    """
+    args = parse_args()  # 加载所选模型的名字
+    model_name = args.model_name
+    x = import_module('model.' + model_name)
+    config = x.Config()  # 加载模型的配置
+    model = x.Seq2Seq(config)  # 加载模型
+    print('==>当前使用的模型为：' + model_name)
+
+    print('==>加载数据中...')
+    # ntime_steps   为时间窗口T
+    # n_next        为想要预测的天数
+    dataset = MyDataset(ntime_steps=config.ntime_steps, n_next=config.n_next)
+    dataloader = DataLoader(dataset=dataset, batch_size=config.batch_size, shuffle=False)
+
+    model.train(model, config, dataloader)  # Seq2Seq训练模型
+
+    # model.test_model()  # 测试还有问题
+
+def run_Seq2Seq_model():
+    print("*"*100)
+
+    args = parse_args()  # 加载所选模型的名字
+    model_name = args.model_name
+    x = import_module('model.' + model_name)
+    config = x.Config()
+
+    print('运行已经跑好的模型')
+    model = x.Seq2Seq(config)
+    model.load_state_dict(torch.load(config.save_model))
+    model.test_model()    # 测试有问题
+
+def main_CNN_LSTM():
+    """
+    该函数为CNN_LSTM的模型函数
+    :return:
+    """
+    args = parse_args()  # 加载所选模型的名字
+    model_name = args.model_name
+    x = import_module('model.' + model_name)
+    config = x.Config()
+
+    model = x.TimeSeriesCNN_LSTM(config)
+
+    print('==>当前使用的模型为：' + model_name)
+
+    print('==>加载数据中...')
+    # ntime_steps   为时间窗口T
+    # n_next        为想要预测的天数
+    dataset = MyDataset(ntime_steps=config.ntime_steps, n_next=config.n_next)
+    dataloader = DataLoader(dataset=dataset, batch_size=config.batch_size, shuffle=False)
+
+    model.train(model, config, dataloader)
+
 if __name__ == '__main__':
 
-    #####        main 和run_model 两个函数为模型：Seq2Seq_attention
-    # main()
-    run_model()
 
-
-
-
-
-
-
-    #后面的内容为Seq2Seq 模型的代码
-    # args = parse_args()  # 加载所选模型的名字
-    # model_name = args.model_name
-    # x = import_module('model.' + model_name)
-    # config = x.Config()  #加载模型的配置
-    # model = x.Seq2Seq(config)   #加载模型
-    # print('==>当前使用的模型为：'+ model_name)
+    main_Seq2Seq_Att()
+    # main_Seq2Seq()
     #
-    # print('==>加载数据中...')
-    # # ntime_steps   为时间窗口T
-    # # n_next        为想要预测的天数
-    # dataset = MyDataset(ntime_steps=config.ntime_steps,n_next=config.n_next)
-    # dataloader = DataLoader(dataset=dataset,batch_size=config.batch_size,shuffle=False)
-    #
-    #
-    # # model.train(model,config,dataloader)  # Seq2Seq训练模型
-    #
-    # model.test_model()
+    # run_Seq2Seq_model()  #有问题
+
+    # main_CNN_LSTM()
+
+    # m = nn.Linear(26,30)
+    # hh = torch.randn(128,100,26)
+    # hh2 = m(hh)
+    # print(hh2.size())  # torch.Size([10, 128, 30])
+
 
 
 

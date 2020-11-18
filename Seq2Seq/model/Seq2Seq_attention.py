@@ -21,6 +21,7 @@ from torch import optim
 
 from torch.autograd import Variable
 import torch.nn.functional as F
+from sklearn.metrics import mean_absolute_error,mean_squared_error
 import time
 import utils
 
@@ -32,7 +33,7 @@ class Config(object):
 
         self.batchsize = 128
 
-        self.save_model = './data/check_point/best_model_air.pth'
+        self.save_model = './data/check_point/best_Seq2Seq_Att_model_air.pth'
 
         self.nhidden_encoder  = 128
 
@@ -286,7 +287,7 @@ class Model(nn.Module):
                         indices[bs] + self.T - 1), :]
                     y_prev[bs, :] = self.y[indices[bs]: (indices[bs] + self.T - 1)]
 
-                loss = self.train_forward(x, y_prev, y_gt)
+                y_pred, y_true,loss = self.train_forward(x, y_prev, y_gt)
 
                 self.iter_losses[int(
                     epoch * iter_per_epoch + idx / self.batch_size)] = loss
@@ -333,6 +334,16 @@ class Model(nn.Module):
                     imporve = " "
                 time_dif = utils.get_time_dif(start_time)
 
+                ###############此处的评估需要增加#############
+
+                MSE, RMSE, MAE = evaluation(y_pred,y_true)
+
+                msg = 'Epochs:{0:d}, Loss:{1:.5f}, MSE:{2:.5f}, RMSE:{3:.5f}, MAE:{4:.5f}, Time:{5} {6}'
+
+                print(msg.format(epoch, loss.item(), MSE, RMSE, MAE, time_dif, imporve))
+
+                ###########################################
+
                 msg = 'Epochs:{0:d},Iterations:{1:d},Loss:{2:.5f},Time:{3} {4}'
 
                 print(msg.format(epoch,n_iter,self.epoch_losses[epoch],time_dif,imporve))
@@ -342,7 +353,7 @@ class Model(nn.Module):
 
             if all_epoch - last_imporve > config.require_improvement:
                 # 在验证集合上loss超过1000batch没有下降，结束训练
-                print('在校验数据集合上已经很长时间没有提升了，模型自动停止训练')
+                print('==>在校验数据集合上已经很长时间没有提升了，模型自动停止训练')
                 flag = True
                 break
 
@@ -371,7 +382,7 @@ class Model(nn.Module):
         self.encoder_optimizer.step()
         self.decoder_optimizer.step()
 
-        return loss.item()
+        return y_pred,y_true ,loss.item()
 
     def test(self, on_train=False):
         """Prediction."""
@@ -426,4 +437,16 @@ class Model(nn.Module):
         plt.show()
 
 
+def evaluation(y_true, y_pred):
+    """
+    该函数为计算，均方误差、平方绝对误差、平方根误差
+    :param y_true:
+    :param y_pred:
+    :return:
+    """
+    MSE = mean_squared_error(y_true,y_pred)  #均方误差
 
+    MAE = mean_absolute_error(y_true,y_pred)  #平方绝对误差
+
+    RMSE = np.sqrt(mean_squared_error(y_true,y_pred))  #此为均方误差的开平方
+    return MSE,RMSE,MAE

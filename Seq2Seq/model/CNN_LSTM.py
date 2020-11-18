@@ -12,7 +12,13 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import time
+from model.utils import *
+import utils
+
 import torch.optim as optim
+from sklearn.metrics import mean_squared_error,mean_absolute_error
+import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 import numpy as np
@@ -24,13 +30,14 @@ class Config(object):
 
         self.dataroot = './data/one_hot_甘.csv'
 
-        self.save_model = './data/check_point/best_model_air.pth'
+        self.save_model = './data/check_point/best_CNN_LSTM_model_air.pth'
 
         self.nhidden_encoder = 128
 
         self.nhidden_decoder = 128
 
-        self.ntimestep = 10  # 时间窗口，即为T
+        self.ntime_steps = 10  # 为时间窗口
+        self.n_next = 1  # 为往后预测的天数
 
         self.epochs = 1000
 
@@ -38,7 +45,7 @@ class Config(object):
 
         self.require_improvement = 100  # 超过100轮训练没有提升就结束训练
 
-        self.batch_size = 50
+        self.batch_size = 128
 
         self.test_batch_size = 1000
 
@@ -61,35 +68,144 @@ class Config(object):
 # https://discuss.pytorch.org/t/multi-step-time-series-lstm-network/41670/6
 
 
-class TimeSeriesCNN(nn.Module):
-    def __init__(self):
-        super(TimeSeriesCNN, self).__init__()
+class TimeSeriesCNN_LSTM(nn.Module):
+    def __init__(self,config):
+        super(TimeSeriesCNN_LSTM, self).__init__()
+        self.window_sizes = config.window_sizes
         kernel_sizes = [4, 5, 6]
-        ts_len = 19 # length of time series
+        ts_len = 20 # length of time series
         hid_size = 100
         self.convs = nn.ModuleList([
             nn.Sequential(
                 nn.Conv1d(
-                    in_channels=19,
-                    out_channels=10,
-                    kernel_size=kernel_size,
+                    in_channels=20,
+                    out_channels=hid_size,
+                    kernel_size=kernel_size
                 ),
-                nn.ReLU(),
-                nn.MaxPool1d(kernel_size=ts_len - kernel_size + 1))
-            for kernel_size in kernel_sizes
+                nn.ReLU())
+                # nn.MaxPool1d(kernel_size=ts_len - kernel_size + 1))
+            for kernel_size in config.window_sizes
         ])
+
         self.fc = nn.Linear(
-            in_features=hid_size * len(kernel_sizes),
-            out_features=3,
+            in_features=hid_size,
+            out_features=hid_size//2
         )
 
+        self.lstm = nn.LSTM(
+            input_size=hid_size//2,
+            hidden_size=hid_size,
+            num_layers=1,
+            batch_first=True)
+
+        self.fc2 = nn.Linear(in_features=hid_size,out_features=hid_size//2)
+        self.fc3 = nn.Linear(in_features=hid_size//2,out_features=config.n_next)
+
+
     def forward(self, x):
+        # batch_size x text_len x embedding_size  -> batch_size x embedding_size x text_len
         x = x.permute(0,2,1)
-        output = [conv(x) for conv in self.convs]
-        output = torch.cat(output, dim=1)
-        output = output.view(output.size(1), -1)
-        output = self.fc(output)
+
+        output = [conv(x) for conv in self.convs]  # out[i]:batch_size x feature_size*1
+
+        # output = [conv(x) for conv in self.convs]
+        output = torch.cat(output, dim=2)
+
+
+        output = output.permute(0,2,1)
+        # output = output.view(output.size(0) * output.size(1) , -1)
+
+        output = F.relu(self.fc(output))
+
+        output, (h_n, h_c) = self.lstm(output)
+
+        output = F.relu(self.fc2(output[:, -1, :]))
+
+        output = F.relu(self.fc3(output))
+        output = F.dropout(output,p=0.1)
+
         return output
+
+    def train(self,model, config, dataloader):
+        self.criterion = nn.MSELoss()
+        self.optimizer = optim.Adam(model.parameters(), lr=config.lr)
+        print('==>开始训练...')
+        best_loss = float('inf')  # 记录最小的损失，，这里不好加一边训练一边保存的代码，无穷大量
+        all_epoch = 0  # 记录进行了多少个epoch
+        last_imporve = 0  # 记录上次校验集loss下降的batch数
+        flag = False  # 记录是否很久没有效果提升，停止训练
+
+        start_time = time.time()
+
+        for epoch in range(config.epochs):
+
+            for i, train_data in enumerate(dataloader):
+                train_x, train_y = torch.as_tensor(train_data[0], dtype=torch.float32), torch.as_tensor(train_data[1],dtype=torch.float32)
+                # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
+                train_y = train_y.squeeze(2)  # 将最后的1去掉
+
+                self.optimizer.zero_grad()
+
+                output = model(train_x)
+                loss = self.criterion(output,train_y)
+                loss.backward()
+                self.optimizer.step()
+
+            if epoch % 10 ==0:
+                plt.ion()
+                plt.figure()
+                plt.plot(range(1, 1 + len(train_y)), train_y, label="True")
+                plt.plot(range(1, 1 + len(output.detach().numpy())), output.detach().numpy(), label="Test")
+                plt.legend()
+                plt.pause(1)
+                plt.close()
+
+
+            if all_epoch % 10 == 0:
+                if loss < best_loss:
+                    best_loss = loss
+                    torch.save(model.state_dict(), config.save_model)
+                    imporve = "*"
+                    last_imporve = all_epoch
+                else:
+                    imporve = " "
+                time_dif = utils.get_time_dif(start_time)
+
+                MSE, RMSE, MAE = evaluation(train_y, output.detach().numpy())
+
+                msg = 'Epochs:{0:d}, Loss:{1:.5f}, MSE:{2:.5f}, RMSE:{3:.5f}, MAE:{4:.5f}, Time:{5} {6}'
+
+                print(msg.format(epoch, loss.item(), MSE, RMSE, MAE, time_dif, imporve))
+
+                # msg = 'Epochs:{0:d},Loss:{1:.5f},Time:{2} {3}'
+                #
+                # print(msg.format(epoch,loss.item(), time_dif, imporve))
+
+            all_epoch = all_epoch + 1
+
+            if all_epoch - last_imporve > config.require_improvement:
+                # 在验证集合上loss超过1000batch没有下降，结束训练
+                print('==>在校验数据集合上已经很长时间没有提升了，模型自动停止训练')
+                flag = True
+                break
+
+            if flag:
+                break
+
+
+def evaluation(y_true, y_pred):
+    """
+    该函数为计算，均方误差、平方绝对误差、平方根误差
+    :param y_true:
+    :param y_pred:
+    :return:
+    """
+    MSE = mean_squared_error(y_true,y_pred)  #均方误差
+
+    MAE = mean_absolute_error(y_true,y_pred)  #平方绝对误差
+
+    RMSE = np.sqrt(mean_squared_error(y_true,y_pred))  #此为均方误差的开平方
+    return MSE,RMSE,MAE
 
 
 class CNN(nn.Module):
@@ -132,64 +248,3 @@ class Model(nn.Module):
         r_out2 = self.linear(r_out[:, -1, :])
 
         return F.log_softmax(r_out2, dim=1)
-
-
-# model = Combine()
-# if args.cuda:
-#     model.cuda()
-#
-# optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
-#
-#
-# def train(epoch):
-#     model.train()
-#     for batch_idx, (data, target) in enumerate(train_loader):
-#
-#         data = np.expand_dims(data, axis=1)
-#         data = torch.FloatTensor(data)
-#         if args.cuda:
-#             data, target = data.cuda(), target.cuda()
-#
-#         data, target = Variable(data), Variable(target)
-#         optimizer.zero_grad()
-#         output = model(data)
-#
-#         loss = F.nll_loss(output, target)
-#         loss.backward()
-#         optimizer.step()
-#         if batch_idx % args.log_interval == 0:
-#             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-#                 epoch, batch_idx * len(data), len(train_loader.dataset),
-#                        100. * batch_idx / len(train_loader), loss.item()))
-#
-#
-# def test():
-#     model.eval()
-#     test_loss = 0
-#     correct = 0
-#     for data, target in test_loader:
-#
-#         data = np.expand_dims(data, axis=1)
-#         data = torch.FloatTensor(data)
-#         print(target.size)
-#
-#         if args.cuda:
-#             data, target = data.cuda(), target.cuda()
-#         # with torch.no_grad:
-#
-#         data, target = Variable(data,volatile=True), Variable(target)
-#         output = model(data)
-#         test_loss += F.nll_loss(output, target, size_average=False).item()  # sum up batch loss
-#
-#         pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
-#         correct += pred.eq(target.data.view_as(pred)).long().cpu().sum()
-#
-#         test_loss /= len(test_loader.dataset)
-#         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-#                 test_loss, correct, len(test_loader.dataset),
-#                 100. * correct / len(test_loader.dataset)))
-#
-#
-# for epoch in range(1, args.epochs + 1):
-#     train(epoch)
-#     test()

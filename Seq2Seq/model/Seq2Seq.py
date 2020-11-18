@@ -12,6 +12,7 @@ import torch.optim as optim
 import utils
 from model.utils import *
 import time
+from sklearn.metrics import  mean_absolute_error,mean_squared_error
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -24,11 +25,11 @@ class Config(object):
         self.ntime_steps = 10 #为时间窗口
         self.n_next = 1       #为往后预测的天数
 
-        self.input_size = 19   #输入数据的维度
+        self.input_size = 20   #输入数据的维度
         self.hidden_dim = 128  #隐藏层的大小
 
         self.num_layers = 1
-        self.epochs  = 1000
+        self.epochs  = 2000
         self.lr = 0.001
 
         self.require_improvement = 100
@@ -56,6 +57,7 @@ class Encoder(nn.Module):
     def init_hidden(self, batch_size):
         return (torch.zeros(self.num_layers,batch_size,self.hidden_dim),
                 torch.zeros(self.num_layers,batch_size,self.hidden_dim))
+
 
     def forward(self, inputs):
         # Push through RNN layer (the ouput is irrelevant)
@@ -121,6 +123,7 @@ class Seq2Seq(nn.Module):
                 train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
                 train_y = train_y.squeeze(2)   #将最后的1去掉
 
+
                 self.encoder_optimizer.zero_grad()
                 self.decoder_optimizer.zero_grad()
 
@@ -136,7 +139,7 @@ class Seq2Seq(nn.Module):
                 self.encoder_optimizer.step()
                 self.decoder_optimizer.step()
 
-            test(self, train_x, train_y,epoch)   # 可视化训练中的实际情况
+            self.test(train_x, train_y,epoch)   # 可视化训练中的实际情况
 
             # 画图部分暂时不画
             # if epoch % 10 == 0:
@@ -178,15 +181,17 @@ class Seq2Seq(nn.Module):
                     imporve = " "
                 time_dif = utils.get_time_dif(start_time)
 
-                msg = 'Epochs:{0:d},Loss:{1:.5f},Time:{2} {3}'
+                MSE, RMSE, MAE = evaluation(train_y,output.detach().numpy())
 
-                print(msg.format(epoch,loss.item(), time_dif, imporve))
+                msg = 'Epochs:{0:d}, Loss:{1:.5f}, MSE:{2:.5f}, RMSE:{3:.5f}, MAE:{4:.5f}, Time:{5} {6}'
+
+                print(msg.format(epoch,loss.item(), MSE,RMSE,MAE,time_dif, imporve))
 
             all_epoch = all_epoch + 1
 
             if all_epoch - last_imporve > config.require_improvement:
                 # 在验证集合上loss超过1000batch没有下降，结束训练
-                print('在校验数据集合上已经很长时间没有提升了，模型自动停止训练')
+                print('==>在校验数据集合上已经很长时间没有提升了，模型自动停止训练')
                 flag = True
                 break
 
@@ -198,13 +203,20 @@ class Seq2Seq(nn.Module):
     def test_model(self):
         # 加载全部数据进行测试
         data_x = read_all_data('./data/one_hot_甘.csv').drop('y',axis=1)
+
+        # print(data_x.info())
+
         data_y = read_all_data('./data/one_hot_甘.csv')['y']
 
-        train_x, train_y = torch.as_tensor(data_x.values, dtype=torch.float32), torch.as_tensor(data_y.values,dtype=torch.float32)
-        train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
-        # train_y = train_y.squeeze(2)  # 将最后的1去掉
+        # print(data_x.values)
+        # print(data_y.head())
 
-        self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1])
+        train_x, train_y = torch.as_tensor(data_x.values, dtype=torch.float32), torch.as_tensor(data_y.values,dtype=torch.float32)
+        train_x = train_x.unsqueeze(0)
+        train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
+        train_y = train_y.unsqueeze(1)  #
+
+        self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1])  #train_x.shape[1]
         # Do forward pass through encoder
         hidden = self.encoder(train_x)
         # Do forward pass through decoder (decoder gets hidden state from encoder)
@@ -219,25 +231,41 @@ class Seq2Seq(nn.Module):
         plt.close()
 
 
-#这个函数为边训练边测试的函数
-def test(self,train_x,train_y,epoch):
-
-    with torch.no_grad():
 
 
-        self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1])
-                # Do forward pass through encoder
-        hidden = self.encoder(train_x)
-                # Do forward pass through decoder (decoder gets hidden state from encoder)
-        output, loss = self.decoder(train_y, hidden, self.criterion)
+    #这个函数为边训练边测试的函数
+    def test(self,train_x,train_y,epoch):
 
-        if epoch % 10 == 0:
+        with torch.no_grad():
 
-            plt.ion()
-            plt.figure()
-            plt.plot(range(1, 1 + len(train_y)),train_y,label="True")
-            plt.plot(range(1, 1 + len(output.detach().numpy())), output.detach().numpy(), label="Test")
-            plt.legend()
-            plt.pause(1)
-            plt.close()
+            self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1])
+                    # Do forward pass through encoder
+            hidden = self.encoder(train_x)
+                    # Do forward pass through decoder (decoder gets hidden state from encoder)
+            output, loss = self.decoder(train_y, hidden, self.criterion)
 
+            if epoch % 10 == 0:
+
+                plt.ion()
+                plt.figure()
+                plt.plot(range(1, 1 + len(train_y)),train_y,label="True")
+                plt.plot(range(1, 1 + len(output.detach().numpy())), output.detach().numpy(), label="Test")
+                plt.legend()
+                plt.pause(1)
+                plt.close()
+
+
+
+def evaluation(y_true, y_pred):
+    """
+    该函数为计算，均方误差、平方绝对误差、平方根误差
+    :param y_true:
+    :param y_pred:
+    :return:
+    """
+    MSE = mean_squared_error(y_true,y_pred)  #均方误差
+
+    MAE = mean_absolute_error(y_true,y_pred)  #平方绝对误差
+
+    RMSE = np.sqrt(mean_squared_error(y_true,y_pred))  #此为均方误差的开平方
+    return MSE,RMSE,MAE
