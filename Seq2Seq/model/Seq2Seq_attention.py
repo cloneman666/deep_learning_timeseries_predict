@@ -21,6 +21,7 @@ from torch import optim
 
 from torch.autograd import Variable
 import torch.nn.functional as F
+from tqdm import tqdm
 from sklearn.metrics import mean_absolute_error,mean_squared_error
 import time
 import utils
@@ -265,7 +266,7 @@ class Model(nn.Module):
         flag = False  # 记录是否很久没有效果提升，停止训练
 
         start_time = time.time()
-        for epoch in range(self.epochs):
+        for epoch in tqdm(range(self.epochs)):
             if self.shuffle:
                 ref_idx = np.random.permutation(self.train_timesteps - self.T)
             else:
@@ -287,7 +288,7 @@ class Model(nn.Module):
                         indices[bs] + self.T - 1), :]
                     y_prev[bs, :] = self.y[indices[bs]: (indices[bs] + self.T - 1)]
 
-                y_pred, y_true,loss = self.train_forward(x, y_prev, y_gt)
+                y_predicted, y_true,loss = self.train_forward(x, y_prev, y_gt)
 
                 self.iter_losses[int(
                     epoch * iter_per_epoch + idx / self.batch_size)] = loss
@@ -336,17 +337,17 @@ class Model(nn.Module):
 
                 ###############此处的评估需要增加#############
 
-                MSE, RMSE, MAE = evaluation(y_pred,y_true)
+                MSE, RMSE, MAE = evaluation(y_predicted.detach().numpy(),y_true)
 
-                msg = 'Epochs:{0:d}, Loss:{1:.5f}, MSE:{2:.5f}, RMSE:{3:.5f}, MAE:{4:.5f}, Time:{5} {6}'
+                msg = 'Epochs:{0:d},Iterations:{1:d}, Loss:{2:.5f}, MSE:{3:.5f}, RMSE:{4:.5f}, MAE:{5:.5f}, Time:{6} {7}'
 
-                print(msg.format(epoch, loss.item(), MSE, RMSE, MAE, time_dif, imporve))
+                print(msg.format(epoch, n_iter,self.epoch_losses[epoch], MSE, RMSE, MAE, time_dif, imporve))
 
                 ###########################################
 
-                msg = 'Epochs:{0:d},Iterations:{1:d},Loss:{2:.5f},Time:{3} {4}'
-
-                print(msg.format(epoch,n_iter,self.epoch_losses[epoch],time_dif,imporve))
+                # msg = 'Epochs:{0:d},Iterations:{1:d},Loss:{2:.5f},Time:{3} {4}'
+                #
+                # print(msg.format(epoch,n_iter,self.epoch_losses[epoch],time_dif,imporve))
                 # print("Epochs: ", epoch, " Iterations: ", n_iter,
                 #       " Loss: ", self.epoch_losses[epoch] + str(imporve))
             all_epoch = all_epoch + 1

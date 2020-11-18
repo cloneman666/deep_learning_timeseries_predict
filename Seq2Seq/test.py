@@ -20,7 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq类模型进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='Seq2Seq_attention',help='choose a model Seq2Seq、Seq2Seq_attention、CNN_LSTM')
+    parser.add_argument('--model_name',type=str,default='CNN_LSTM',help='choose a model Seq2Seq、Seq2Seq_attention、CNN_LSTM')
 
     args = parser.parse_args()
 
@@ -159,17 +159,14 @@ def main_CNN_LSTM():
 if __name__ == '__main__':
 
 
-    main_Seq2Seq_Att()
+    # main_Seq2Seq_Att()
     # main_Seq2Seq()
     #
     # run_Seq2Seq_model()  #有问题
 
-    # main_CNN_LSTM()
+    main_CNN_LSTM()
 
-    # m = nn.Linear(26,30)
-    # hh = torch.randn(128,100,26)
-    # hh2 = m(hh)
-    # print(hh2.size())  # torch.Size([10, 128, 30])
+
 
 
 

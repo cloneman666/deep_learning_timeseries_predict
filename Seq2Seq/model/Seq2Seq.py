@@ -141,36 +141,6 @@ class Seq2Seq(nn.Module):
 
             self.test(train_x, train_y,epoch)   # 可视化训练中的实际情况
 
-            # 画图部分暂时不画
-            # if epoch % 10 == 0:
-            #     # y_train_pred = self.test(on_train=True)
-            #     # y_test_pred = self.test(on_train=False)
-            #     # y_pred = np.concatenate((y_train_pred, y_test_pred))
-            #     # hh1,hh2 = get_data(ntime_steps=config.ntime_steps, n_next=config.n_next)
-            #
-            #     y_true = read_all_data('./data/one_hot_甘.csv')['y']
-            #
-            #     plt.ion()
-            #     plt.figure()
-            #
-            #
-            #     plt.plot(range(1,1 + len(y_true)),y_true,label="True")
-            #     # plt.plot(range(1,1 + len(output.detach().numpy())),output.detach().numpy(),label="Test")
-            #
-            #     # plt.plot(range(config.ntime_steps,len(output.detach().numpy()) + config.ntime_steps),output.detach().numpy(),label="Predicted")
-            #
-            #     # plt.plot(range(config.ntime_steps,config.ntime_steps + len(y_pred)),y_pred,label="Predicted")
-            #
-            #     # plt.plot(range(1, 1 + len(self.y)), self.y, label="True")
-            #
-            #     # plt.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
-            #     # plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),y_test_pred, label='Predicted - Test')
-            #
-            #     plt.legend(loc='upper left')
-            #
-            #     plt.pause(2)
-            #     plt.close()
-
             if all_epoch % 10 == 0:
                 if loss < best_loss:
                     best_loss = loss
