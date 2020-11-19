@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from model.utils import *  #每个函数内部的方法
 from model.Seq2Seq_attention import *
 from importlib import import_module  #动态加载不同的模块
+import train
 import utils   #这个为计算时间的方法，为公共方法，所以定义在外面
 
 def parse_args():
@@ -20,7 +21,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq类模型进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='CNN_LSTM',help='choose a model Seq2Seq、Seq2Seq_attention、CNN_LSTM')
+    parser.add_argument('--model_name',type=str,default='CNN_GRU',help='choose a model Seq2Seq、Seq2Seq_attention、CNN_LSTM、CNN_GRU')
 
     args = parser.parse_args()
 
@@ -139,12 +140,17 @@ def main_CNN_LSTM():
     该函数为CNN_LSTM的模型函数
     :return:
     """
+    np.random.seed(1)
+    torch.manual_seed(1)
+    torch.cuda.manual_seed_all(1)
+    torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
+
     args = parse_args()  # 加载所选模型的名字
     model_name = args.model_name
     x = import_module('model.' + model_name)
     config = x.Config()
 
-    model = x.TimeSeriesCNN_LSTM(config)
+    model = x.Model(config)
 
     print('==>当前使用的模型为：' + model_name)
 
@@ -164,7 +170,29 @@ if __name__ == '__main__':
     #
     # run_Seq2Seq_model()  #有问题
 
-    main_CNN_LSTM()
+    # main_CNN_LSTM()
+
+    # np.random.seed(1)
+    # torch.manual_seed(1)
+    # torch.cuda.manual_seed_all(1)
+    # torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
+    #
+    args = parse_args()  # 加载所选模型的名字
+    model_name = args.model_name
+    x = import_module('model.' + model_name)
+    config = x.Config()
+
+    model = x.Model(config)
+
+    print('==>当前使用的模型为：' + model_name)
+
+    print('==>加载数据中...')
+    # ntime_steps   为时间窗口T
+    # n_next        为想要预测的天数
+    dataset = MyDataset(ntime_steps=config.ntime_steps, n_next=config.n_next)
+    dataloader = DataLoader(dataset=dataset, batch_size=config.batch_size, shuffle=False)
+
+    train.train(model, config, dataloader)
 
 
 

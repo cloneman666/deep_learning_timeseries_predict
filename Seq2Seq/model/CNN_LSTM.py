@@ -68,11 +68,11 @@ class Config(object):
 # https://discuss.pytorch.org/t/multi-step-time-series-lstm-network/41670/6
 
 
-class TimeSeriesCNN_LSTM(nn.Module):
+class Model(nn.Module):
     def __init__(self,config):
-        super(TimeSeriesCNN_LSTM, self).__init__()
+        super(Model, self).__init__()
         self.window_sizes = config.window_sizes
-        kernel_sizes = [4, 5, 6]
+
         ts_len = 20 # length of time series
         hid_size = 100
         self.convs = nn.ModuleList([
@@ -86,8 +86,6 @@ class TimeSeriesCNN_LSTM(nn.Module):
                 # nn.MaxPool1d(kernel_size=ts_len - kernel_size + 1))
             for kernel_size in config.window_sizes
         ])
-
-
 
         self.lstm = nn.LSTM(
             input_size=hid_size,
@@ -120,7 +118,7 @@ class TimeSeriesCNN_LSTM(nn.Module):
 
         output = F.relu(self.fc2(output))
         output = F.dropout(output,p=0.1)
-
+        # output = F.softmax(output)
         return output
 
     def train(self,model, config, dataloader):

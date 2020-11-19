@@ -19,7 +19,7 @@ class Config(object):
         self.n_next = 1  # 为往后预测的天数
 
         self.input_size = 20  # 输入数据的维度
-        self.hidden_dim = 128  # 隐藏层的大小
+        self.hidden_dim = 50  # 隐藏层的大小
 
         self.num_layers = 1
         self.epochs = 2000
@@ -27,22 +27,21 @@ class Config(object):
 
         self.require_improvement = 100
 
-        self.save_model = './data/check_point/best_seq2seq_model_air.pth'
+        self.save_model = './data/check_point/best_CNN_GRU_model_air.pth'
 
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
 
-        self.window_sizes = [3, 4, 5, 6]
+        self.window_sizes = [4, 5, 6]
 
-class CNN_GRU(nn.Module):
+class Model(nn.Module):
     def __init__(self,config):
-        super(CNN_GRU, self).__init__()
-
+        super(Model, self).__init__()
 
         self.convs = nn.ModuleList([
             nn.Sequential(
                 nn.Conv1d(
-                    in_channels=20,
+                    in_channels=config.input_size,
                     out_channels=config.hidden_dim,
                     kernel_size=kernel_size
                 ),
@@ -61,4 +60,20 @@ class CNN_GRU(nn.Module):
 
 
     def forward(self,x):
-        pass
+        # batch_size x text_len x embedding_size  -> batch_size x embedding_size x text_len
+        x = x.permute(0, 2, 1)
+
+        output = [conv(x) for conv in self.convs]  # out[i]:batch_size x feature_size*1
+
+        # output = [conv(x) for conv in self.convs]
+        output = torch.cat(output, dim=2)
+
+        output = output.permute(0, 2, 1)
+
+        output,_ = self.gru(output)
+
+        output = F.relu(self.fc(output[:, -1, :]))
+
+        # output = F.dropout(output, p=0.1)
+
+        return output
