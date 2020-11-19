@@ -87,19 +87,16 @@ class TimeSeriesCNN_LSTM(nn.Module):
             for kernel_size in config.window_sizes
         ])
 
-        self.fc = nn.Linear(
-            in_features=hid_size,
-            out_features=hid_size//2
-        )
+
 
         self.lstm = nn.LSTM(
-            input_size=hid_size//2,
-            hidden_size=hid_size,
+            input_size=hid_size,
+            hidden_size=hid_size*2,
             num_layers=1,
             batch_first=True)
 
-        self.fc2 = nn.Linear(in_features=hid_size,out_features=hid_size//2)
-        self.fc3 = nn.Linear(in_features=hid_size//2,out_features=config.n_next)
+        self.fc = nn.Linear(in_features=hid_size*2,out_features=hid_size)
+        self.fc2 = nn.Linear(in_features=hid_size,out_features=config.n_next)
 
 
     def forward(self, x):
@@ -115,13 +112,13 @@ class TimeSeriesCNN_LSTM(nn.Module):
         output = output.permute(0,2,1)
         # output = output.view(output.size(0) * output.size(1) , -1)
 
-        output = F.relu(self.fc(output))
+        # output = F.relu(self.fc(output))
 
         output, (h_n, h_c) = self.lstm(output)
 
-        output = F.relu(self.fc2(output[:, -1, :]))
+        output = F.relu(self.fc(output[:, -1, :]))
 
-        output = F.relu(self.fc3(output))
+        output = F.relu(self.fc2(output))
         output = F.dropout(output,p=0.1)
 
         return output
@@ -228,9 +225,9 @@ class CNN(nn.Module):
         return x
 
 
-class Model(nn.Module):
+class Test_Model(nn.Module):
     def __init__(self):
-        super(Model, self).__init__()
+        super(Test_Model, self).__init__()
         self.cnn = CNN()
         self.rnn = nn.LSTM(
             input_size=320,
