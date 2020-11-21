@@ -14,6 +14,7 @@ class Config(object):
         self.model_name = 'CNN_GRU'
 
         self.batch_size = 128
+        self.test_batch_size = 100
 
         self.ntime_steps = 10  # 为时间窗口
         self.n_next = 1  # 为往后预测的天数
@@ -22,10 +23,12 @@ class Config(object):
         self.hidden_dim = 50  # 隐藏层的大小
 
         self.num_layers = 1
-        self.epochs = 2000
+        self.epochs = 3000
         self.lr = 0.001
 
-        self.require_improvement = 100
+        self.dropout = 0.1
+
+        self.require_improvement = 200
 
         self.save_model = './data/check_point/best_CNN_GRU_model_air.pth'
 
@@ -58,6 +61,8 @@ class Model(nn.Module):
 
         self.fc = nn.Linear(in_features=config.hidden_dim//2,out_features=config.n_next)
 
+        self.dropout = nn.Dropout(config.dropout)
+
 
     def forward(self,x):
         # batch_size x text_len x embedding_size  -> batch_size x embedding_size x text_len
@@ -72,8 +77,8 @@ class Model(nn.Module):
 
         output,_ = self.gru(output)
 
-        output = F.relu(self.fc(output[:, -1, :]))
-
+        # output = torch.tanh(self.fc(output[:,-1,:]))
+        output = F.leaky_relu(self.fc(output[:,-1,:]))
         # output = F.dropout(output, p=0.1)
-
+        output = self.dropout(output)
         return output

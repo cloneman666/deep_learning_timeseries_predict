@@ -11,12 +11,13 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import mean_absolute_error,mean_squared_error
 import numpy as np
+# from tqdm import tqdm
 import time
 import matplotlib.pyplot as plt
 import utils
 
 
-def train(model,config,train_dataloader): #此处可以加入测试数据的参数
+def train(model,config,train_dataloader,test_dataloader): #此处可以加入测试数据的参数
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
     print('==>开始训练...')
@@ -42,16 +43,28 @@ def train(model,config,train_dataloader): #此处可以加入测试数据的参�
             loss.backward()
             optimizer.step()
 
-        if epoch % 20 == 0:
+        if epoch % 50 == 0:
             plt.ion()
             plt.figure()
+
             plt.plot(range(1, 1 + len(train_y)), train_y, label="True")
             plt.plot(range(1, 1 + len(output.detach().numpy())), output.detach().numpy(), label="Test")
             plt.legend()
             plt.pause(1)
             plt.close()
 
-        if all_epoch % 10 == 0:
+        if all_epoch % 50 == 0:
+            with torch.no_grad():
+                for i , test_data in enumerate(test_dataloader):
+                    test_x, test_y = torch.as_tensor(test_data[0], dtype=torch.float32), torch.as_tensor(
+                        test_data[1],
+                        dtype=torch.float32)
+                    # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
+                    test_y = test_y.squeeze(2)  # 将最后的1去掉
+                    test_output = model(test_x)
+                    test_loss = criterion(test_output,test_y)
+                    test_MSE, test_RMSE, test_MAE = evaluation(test_y, test_output.detach().numpy())
+
             if loss < best_loss:
                 best_loss = loss
                 torch.save(model.state_dict(), config.save_model)
@@ -63,13 +76,10 @@ def train(model,config,train_dataloader): #此处可以加入测试数据的参�
 
             MSE, RMSE, MAE = evaluation(train_y, output.detach().numpy())
 
-            msg = 'Epochs:{0:d}, Loss:{1:.5f}, MSE:{2:.5f}, RMSE:{3:.5f}, MAE:{4:.5f}, Time:{5} {6}'
+            msg = 'Epochs:{0:d}, Train Loss:{1:.5f},Test Loss:{2:.5f}, Train_MSE:{3:.5f}, Train_RMSE:{4:.5f}, Train_MAE:{5:.5f},Test_MSE:{6:.5f}, Test_RMSE:{7:.5f}, Test_MAE:{8:.5f}, Time:{9} {10}'
 
-            print(msg.format(epoch, loss.item(), MSE, RMSE, MAE, time_dif, imporve))
+            print(msg.format(epoch, loss.item(),test_loss.item(), MSE, RMSE, MAE,test_MSE, test_RMSE, test_MAE, time_dif, imporve))
 
-            # msg = 'Epochs:{0:d},Loss:{1:.5f},Time:{2} {3}'
-            #
-            # print(msg.format(epoch,loss.item(), time_dif, imporve))
 
         all_epoch = all_epoch + 1
 
