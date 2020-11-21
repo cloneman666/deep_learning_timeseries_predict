@@ -38,9 +38,7 @@ class Config(object):
 
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
-
-
-        # print("==> Use accelerator: ", self.device)
+        print("==> Use accelerator: ", self.device)
 
 class Encoder(nn.Module):
 
@@ -98,8 +96,8 @@ class Decoder(nn.Module):
 class Seq2Seq(nn.Module):
     def __init__(self,config):
         super(Seq2Seq, self).__init__()
-        self.encoder = Encoder(config)
-        self.decoder = Decoder(config)
+        self.encoder = Encoder(config).to(config.device)
+        self.decoder = Decoder(config).to(config.device)
 
         self.encoder_optimizer = optim.Adam(self.encoder.parameters(), lr=config.lr)
         self.decoder_optimizer = optim.Adam(self.decoder.parameters(), lr=config.lr)
@@ -119,7 +117,7 @@ class Seq2Seq(nn.Module):
 
             for i,train_data in enumerate(dataloader):
 
-                train_x ,train_y= torch.as_tensor(train_data[0],dtype=torch.float32),torch.as_tensor(train_data[1],dtype=torch.float32)
+                train_x ,train_y= torch.as_tensor(train_data[0],dtype=torch.float32).to(config.device),torch.as_tensor(train_data[1],dtype=torch.float32).to(config.device)
                 train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
                 train_y = train_y.squeeze(2)   #将最后的1去掉
 

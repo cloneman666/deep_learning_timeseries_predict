@@ -114,3 +114,39 @@ def evaluation(y_true, y_pred):
     RMSE = np.sqrt(mean_squared_error(y_true,y_pred))  #此为均方误差的开平方
 
     return MSE,RMSE,MAE
+
+
+# def testhhh(config,on_train=False):
+#         """Prediction."""
+#
+#     if on_train:
+#         y_pred = np.zeros(self.train_timesteps - self.T + 1)
+#     else:
+#         y_pred = np.zeros(self.X.shape[0] - self.train_timesteps)
+#
+#     i = 0
+#     while i < len(y_pred):
+#         batch_idx = np.array(range(len(y_pred)))[i: (i + self.batch_size)]
+#         X = np.zeros((len(batch_idx), self.T - 1, self.X.shape[1]))
+#         y_history = np.zeros((len(batch_idx), self.T - 1))
+#
+#         for j in range(len(batch_idx)):
+#             if on_train:
+#                 X[j, :, :] = self.X[range(
+#                     batch_idx[j], batch_idx[j] + self.T - 1), :]
+#                 y_history[j, :] = self.y[range(
+#                     batch_idx[j], batch_idx[j] + self.T - 1)]
+#             else:
+#                 X[j, :, :] = self.X[range(
+#                         batch_idx[j] + self.train_timesteps - self.T, batch_idx[j] + self.train_timesteps - 1), :]
+#                 y_history[j, :] = self.y[range(
+#                         batch_idx[j] + self.train_timesteps - self.T, batch_idx[j] + self.train_timesteps - 1)]
+#
+#         y_history = (torch.from_numpy(y_history).type(torch.FloatTensor).to(self.device))
+#
+#         _, input_encoded = self.Encoder((torch.from_numpy(X).type(torch.FloatTensor).to(self.device)))
+#
+#         y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
+#         i += self.batch_size
+#
+#     return y_pred

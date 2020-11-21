@@ -47,6 +47,7 @@ class Config(object):
         self.test_batch_size = 100
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print("==> Use accelerator: ", self.device)
 
         self.feature_size = 20
 

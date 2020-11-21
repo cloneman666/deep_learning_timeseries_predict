@@ -34,6 +34,7 @@ class Config(object):
 
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
+        print("==> Use accelerator: ", self.device)
 
         self.window_sizes = [4, 5, 6]
 

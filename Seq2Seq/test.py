@@ -23,7 +23,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq类模型进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='CNN_GRU',help='choose a model Seq2Seq、Seq2Seq_attention、CNN_LSTM、CNN_GRU')
+    parser.add_argument('--model_name',type=str,default='Seq2Seq',help='choose a model Seq2Seq、Seq2Seq_attention、CNN_LSTM、CNN_GRU')
 
     args = parser.parse_args()
 
@@ -89,9 +89,9 @@ def run_Seq2Seq_Att_model():
     x = import_module('model.' + model_name)
     config = x.Config()
 
-    print('加载数据...')
+    print('==>加载数据...')
     X, y = read_data(config.dataroot, debug=False)
-    print('运行已经跑好的模型')
+    print('==>运行已经跑好的模型:',model_name)
     model = x.Model(
         X,
         y,
@@ -117,10 +117,14 @@ def main_Seq2Seq():
     print('==>加载数据中...')
     # ntime_steps   为时间窗口T
     # n_next        为想要预测的天数
-    dataset = MyDataset(ntime_steps=config.ntime_steps, n_next=config.n_next)
-    dataloader = DataLoader(dataset=dataset, batch_size=config.batch_size, shuffle=False)
 
-    model.train(model, config, dataloader)  # Seq2Seq训练模型
+    Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
+
+    train_data = MyDataset(Train_X, Train_Y)
+    train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
+
+
+    model.train(model, config, train_dataloader)  # Seq2Seq训练模型
 
     # model.test_model()  # 测试还有问题
 
@@ -137,74 +141,53 @@ def run_Seq2Seq_model():
     model.load_state_dict(torch.load(config.save_model))
     model.test_model()    # 测试有问题
 
-def main_CNN_LSTM():
-    """
-    该函数为CNN_LSTM的模型函数
-    :return:
-    """
-    np.random.seed(1)
-    torch.manual_seed(1)
-    torch.cuda.manual_seed_all(1)
-    torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
-
-    args = parse_args()  # 加载所选模型的名字
-    model_name = args.model_name
-    x = import_module('model.' + model_name)
-    config = x.Config()
-
-    model = x.Model(config)
-
-    print('==>当前使用的模型为：' + model_name)
-
-    print('==>加载数据中...')
-    # ntime_steps   为时间窗口T
-    # n_next        为想要预测的天数
-    dataset = MyDataset(ntime_steps=config.ntime_steps, n_next=config.n_next)
-    dataloader = DataLoader(dataset=dataset, batch_size=config.batch_size, shuffle=False)
-
-    model.train(model, config, dataloader)
 
 if __name__ == '__main__':
 
 
     # main_Seq2Seq_Att()
+    run_Seq2Seq_Att_model()
     # main_Seq2Seq()
     #
     # run_Seq2Seq_model()  #有问题
 
-    # main_CNN_LSTM()
 
-    np.random.seed(1)
-    torch.manual_seed(1)
-    torch.cuda.manual_seed_all(1)
-    torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
+
+
+#############################################################
+    #   CNN_LSTM   CNN_GRU
+
+    # np.random.seed(1)
+    # torch.manual_seed(1)
+    # torch.cuda.manual_seed_all(1)
+    # torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
+    # #
+    # args = parse_args()  # 加载所选模型的名字
+    # model_name = args.model_name
+    # x = import_module('model.' + model_name)
+    # config = x.Config()
     #
-    args = parse_args()  # 加载所选模型的名字
-    model_name = args.model_name
-    x = import_module('model.' + model_name)
-    config = x.Config()
-
-    model = x.Model(config)
-
-    print('==>当前使用的模型为：' + model_name)
-
-    print('==>加载数据中...')
-
-    Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
-
-    # ntime_steps   为时间窗口T
-    # n_next        为想要预测的天数
-    train_data = MyDataset(Train_X,Train_Y)
-
-    test_data = MyDataset(Test_X,Test_Y)
-
-
-
-    train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
-
-    test_dataloader = DataLoader(dataset=test_data,batch_size=config.test_batch_size)
-
-    train.train(model, config, train_dataloader,test_dataloader)
+    # model = x.Model(config)
+    # model = model.to(config.device)
+    #
+    # print('==>当前使用的模型为：' + model_name)
+    #
+    # print('==>加载数据中...')
+    #
+    # Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
+    #
+    # # ntime_steps   为时间窗口T
+    # # n_next        为想要预测的天数
+    # train_data = MyDataset(Train_X,Train_Y)
+    #
+    # test_data = MyDataset(Test_X,Test_Y)
+    #
+    #
+    # train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
+    #
+    # test_dataloader = DataLoader(dataset=test_data,batch_size=config.test_batch_size)
+    #
+    # train.train(model, config, train_dataloader,test_dataloader)
 
 
 
