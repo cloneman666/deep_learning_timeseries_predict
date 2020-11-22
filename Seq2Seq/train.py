@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import mean_absolute_error,mean_squared_error
 import numpy as np
-# from tqdm import tqdm
+from model.utils import *
 import time
 import matplotlib.pyplot as plt
 import utils
@@ -44,11 +44,23 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
             optimizer.step()
 
         if epoch % 50 == 0:
+            y_train_pred ,Y1= draw_pic(model,config,on_train=True)
+            y_test_pred ,Y1= draw_pic(model,config,on_train=False)
+
+
+
             plt.ion()
             plt.figure()
 
-            plt.plot(range(1, 1 + len(train_y)), train_y, label="True")
-            plt.plot(range(1, 1 + len(output.detach().numpy())), output.detach().numpy(), label="Test")
+            plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1),y_test_pred, label='Predicted - Test')
+
+            plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps),y_train_pred, label='Predicted - Train')
+
+            plt.plot(range(1,1 +len(Y1)),Y1,label='True')
+
+            # plt.plot(range(1, 1 + len(train_y)), train_y, label="True")
+            # plt.plot(range(1, 1 + len(output.detach().numpy())), output.detach().numpy(), label="Test")
+
             plt.legend()
             plt.pause(1)
             plt.close()
@@ -93,6 +105,59 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
             break
 
 
+
+def draw_pic(model,config,on_train=True):
+
+    # Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
+
+    X1,Y1 = read_data(config.dataroot)
+    train_timesteps = int(X1.shape[0] * 0.8)
+
+    if on_train:
+        y_pred = np.zeros(train_timesteps - config.ntime_steps + 1)
+    else:
+        y_pred = np.zeros(X1.shape[0] - train_timesteps)
+
+    i = 0
+    while i < len(y_pred):
+        batch_idx = np.array(range(len(y_pred)))[i: (i + config.batch_size)]
+        X = np.zeros((len(batch_idx), config.ntime_steps - 1, X1.shape[1]))
+        y_history = np.zeros((len(batch_idx), config.ntime_steps - 1))
+
+        for j in range(len(batch_idx)):
+            if on_train:
+
+                X[j, :, :] = X1[range(batch_idx[j], batch_idx[j] + config.ntime_steps - 1), :]
+
+                y_history[j, :] = Y1[range(batch_idx[j], batch_idx[j] + config.ntime_steps - 1)]
+
+            else:
+                X[j, :, :] = X1[range(batch_idx[j] + train_timesteps - config.ntime_steps, batch_idx[j] + train_timesteps - 1), :]
+
+                y_history[j, :] = Y1[range(batch_idx[j] + train_timesteps - config.ntime_steps, batch_idx[j] + train_timesteps - 1)]
+
+        #这里用不到
+        # y_history = torch.from_numpy(y_history).type(torch.FloatTensor).to(config.device)
+
+        # train_x, train_y = torch.as_tensor(train_data[0], dtype=torch.float32), torch.as_tensor(train_data[1],
+        #                                                                                         dtype=torch.float32)
+        # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
+        # train_y = train_y.squeeze(2)  # 将最后的1去掉
+
+        y_pred[i:(i+config.batch_size)] = model(torch.as_tensor(X, dtype=torch.float32)).detach().numpy()[:,0]
+
+
+
+        # _, input_encoded = self.Encoder((torch.from_numpy(X).type(torch.FloatTensor).to(config.device)))
+        #
+        # y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
+        i += config.batch_size
+
+    return y_pred,Y1
+
+
+
+
 def test(model,config,train_data,test_data):
     pass
 
@@ -114,39 +179,3 @@ def evaluation(y_true, y_pred):
     RMSE = np.sqrt(mean_squared_error(y_true,y_pred))  #此为均方误差的开平方
 
     return MSE,RMSE,MAE
-
-
-# def testhhh(config,on_train=False):
-#         """Prediction."""
-#
-#     if on_train:
-#         y_pred = np.zeros(self.train_timesteps - self.T + 1)
-#     else:
-#         y_pred = np.zeros(self.X.shape[0] - self.train_timesteps)
-#
-#     i = 0
-#     while i < len(y_pred):
-#         batch_idx = np.array(range(len(y_pred)))[i: (i + self.batch_size)]
-#         X = np.zeros((len(batch_idx), self.T - 1, self.X.shape[1]))
-#         y_history = np.zeros((len(batch_idx), self.T - 1))
-#
-#         for j in range(len(batch_idx)):
-#             if on_train:
-#                 X[j, :, :] = self.X[range(
-#                     batch_idx[j], batch_idx[j] + self.T - 1), :]
-#                 y_history[j, :] = self.y[range(
-#                     batch_idx[j], batch_idx[j] + self.T - 1)]
-#             else:
-#                 X[j, :, :] = self.X[range(
-#                         batch_idx[j] + self.train_timesteps - self.T, batch_idx[j] + self.train_timesteps - 1), :]
-#                 y_history[j, :] = self.y[range(
-#                         batch_idx[j] + self.train_timesteps - self.T, batch_idx[j] + self.train_timesteps - 1)]
-#
-#         y_history = (torch.from_numpy(y_history).type(torch.FloatTensor).to(self.device))
-#
-#         _, input_encoded = self.Encoder((torch.from_numpy(X).type(torch.FloatTensor).to(self.device)))
-#
-#         y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
-#         i += self.batch_size
-#
-#     return y_pred

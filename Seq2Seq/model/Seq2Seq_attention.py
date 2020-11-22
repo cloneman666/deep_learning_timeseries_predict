@@ -401,10 +401,10 @@ class Model(nn.Module):
 
             for j in range(len(batch_idx)):
                 if on_train:
-                    X[j, :, :] = self.X[range(
-                        batch_idx[j], batch_idx[j] + self.T - 1), :]
-                    y_history[j, :] = self.y[range(
-                        batch_idx[j], batch_idx[j] + self.T - 1)]
+
+                    X[j, :, :] = self.X[range(batch_idx[j], batch_idx[j] + self.T - 1), :]
+
+                    y_history[j, :] = self.y[range(batch_idx[j], batch_idx[j] + self.T - 1)]
                 else:
                     X[j, :, :] = self.X[range(
                         batch_idx[j] + self.train_timesteps - self.T, batch_idx[j] + self.train_timesteps - 1), :]

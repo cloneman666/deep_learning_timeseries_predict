@@ -13,6 +13,8 @@ class Config(object):
     def __init__(self):
         self.model_name = 'CNN_GRU'
 
+        self.dataroot = './data/one_hot_甘.csv'
+
         self.batch_size = 128
         self.test_batch_size = 100
 
