@@ -22,7 +22,7 @@ class Config(object):
         self.n_next = 1  # 为往后预测的天数
 
         self.input_size = 20  # 输入数据的维度
-        self.hidden_dim = 50  # 隐藏层的大小
+        self.hidden_dim = 100  # 隐藏层的大小
 
         self.num_layers = 1
         self.epochs = 3000
@@ -58,11 +58,12 @@ class Model(nn.Module):
 
         self.gru = nn.GRU(
             input_size=config.hidden_dim,
-            hidden_size=config.hidden_dim//2,
+            hidden_size=config.hidden_dim // 2,
             num_layers=config.num_layers,
             batch_first=True)
 
-        self.fc = nn.Linear(in_features=config.hidden_dim//2,out_features=config.n_next)
+        self.fc = nn.Linear(in_features=config.hidden_dim//2,out_features=config.hidden_dim//4)
+        self.fc2 = nn.Linear(in_features=config.hidden_dim//4,out_features=config.n_next)
 
         self.dropout = nn.Dropout(config.dropout)
 
@@ -83,5 +84,6 @@ class Model(nn.Module):
         # output = torch.tanh(self.fc(output[:,-1,:]))
         output = F.leaky_relu(self.fc(output[:,-1,:]))
         # output = F.dropout(output, p=0.1)
+        output = F.leaky_relu(self.fc2(output))
         output = self.dropout(output)
         return output

@@ -23,7 +23,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq类模型进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='CNN_LSTM',help='choose a model Seq2Seq、Seq2Seq_attention、CNN_LSTM、CNN_GRU')
+    parser.add_argument('--model_name',type=str,default='CNN_GRU',help='choose a model Seq2Seq、Seq2Seq_attention、CNN_LSTM、CNN_GRU')
 
     args = parser.parse_args()
 
