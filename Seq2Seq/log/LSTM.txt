@@ -1,0 +1,66 @@
+==> Use accelerator:  cpu
+==>当前使用的模型为：LSTM
+==>加载数据中...
+==>开始训练...
+Epochs:0, Train Loss:0.84055,Test Loss:1.10112, Train_MSE:0.84055, Train_RMSE:0.91682, Train_MAE:0.64947,Test_MSE:1.10112, Test_RMSE:1.04934, Test_MAE:0.74623, Time:0:00:00 *
+Epochs:50, Train Loss:0.78897,Test Loss:1.18754, Train_MSE:0.78897, Train_RMSE:0.88824, Train_MAE:0.60118,Test_MSE:1.18754, Test_RMSE:1.08974, Test_MAE:0.78403, Time:0:00:03 *
+Epochs:100, Train Loss:0.72746,Test Loss:1.33220, Train_MSE:0.72746, Train_RMSE:0.85291, Train_MAE:0.52237,Test_MSE:1.33220, Test_RMSE:1.15421, Test_MAE:0.85197, Time:0:00:05 *
+Epochs:150, Train Loss:0.82439,Test Loss:1.35674, Train_MSE:0.82439, Train_RMSE:0.90796, Train_MAE:0.51148,Test_MSE:1.35674, Test_RMSE:1.16479, Test_MAE:0.87228, Time:0:00:08
+Epochs:200, Train Loss:0.74657,Test Loss:1.31622, Train_MSE:0.74657, Train_RMSE:0.86404, Train_MAE:0.48922,Test_MSE:1.31622, Test_RMSE:1.14727, Test_MAE:0.84639, Time:0:00:11
+Epochs:250, Train Loss:0.66711,Test Loss:1.43083, Train_MSE:0.66711, Train_RMSE:0.81677, Train_MAE:0.41003,Test_MSE:1.43083, Test_RMSE:1.19617, Test_MAE:0.91237, Time:0:00:14 *
+Epochs:300, Train Loss:0.45269,Test Loss:1.13452, Train_MSE:0.45269, Train_RMSE:0.67282, Train_MAE:0.51714,Test_MSE:1.13452, Test_RMSE:1.06514, Test_MAE:0.78224, Time:0:00:17 *
+Epochs:350, Train Loss:0.38551,Test Loss:1.44981, Train_MSE:0.38551, Train_RMSE:0.62090, Train_MAE:0.38591,Test_MSE:1.44981, Test_RMSE:1.20408, Test_MAE:0.91761, Time:0:00:20 *
+Epochs:400, Train Loss:0.33502,Test Loss:1.40541, Train_MSE:0.33502, Train_RMSE:0.57881, Train_MAE:0.39652,Test_MSE:1.40541, Test_RMSE:1.18550, Test_MAE:0.89713, Time:0:00:23 *
+Epochs:450, Train Loss:0.18433,Test Loss:1.19017, Train_MSE:0.18433, Train_RMSE:0.42933, Train_MAE:0.32658,Test_MSE:1.19017, Test_RMSE:1.09095, Test_MAE:0.79600, Time:0:00:26 *
+Epochs:500, Train Loss:0.45777,Test Loss:1.49302, Train_MSE:0.45777, Train_RMSE:0.67659, Train_MAE:0.43053,Test_MSE:1.49302, Test_RMSE:1.22189, Test_MAE:0.93879, Time:0:00:29
+Epochs:550, Train Loss:0.33265,Test Loss:1.49535, Train_MSE:0.33265, Train_RMSE:0.57676, Train_MAE:0.37550,Test_MSE:1.49535, Test_RMSE:1.22284, Test_MAE:0.92442, Time:0:00:33
+Epochs:600, Train Loss:0.34535,Test Loss:1.53981, Train_MSE:0.34535, Train_RMSE:0.58766, Train_MAE:0.40580,Test_MSE:1.53981, Test_RMSE:1.24089, Test_MAE:0.95175, Time:0:00:36
+Epochs:650, Train Loss:0.36410,Test Loss:1.52587, Train_MSE:0.36410, Train_RMSE:0.60341, Train_MAE:0.42873,Test_MSE:1.52587, Test_RMSE:1.23526, Test_MAE:0.94393, Time:0:00:39
+Epochs:700, Train Loss:0.71936,Test Loss:1.54401, Train_MSE:0.71936, Train_RMSE:0.84815, Train_MAE:0.48765,Test_MSE:1.54401, Test_RMSE:1.24258, Test_MAE:0.95655, Time:0:00:42
+Epochs:750, Train Loss:0.66482,Test Loss:1.43301, Train_MSE:0.66482, Train_RMSE:0.81537, Train_MAE:0.41192,Test_MSE:1.43301, Test_RMSE:1.19708, Test_MAE:0.90381, Time:0:00:46
+Epochs:800, Train Loss:0.64941,Test Loss:1.42924, Train_MSE:0.64941, Train_RMSE:0.80586, Train_MAE:0.37449,Test_MSE:1.42924, Test_RMSE:1.19551, Test_MAE:0.90453, Time:0:00:49
+Epochs:850, Train Loss:0.31348,Test Loss:1.34453, Train_MSE:0.31348, Train_RMSE:0.55989, Train_MAE:0.36071,Test_MSE:1.34453, Test_RMSE:1.15954, Test_MAE:0.86221, Time:0:00:52
+Epochs:900, Train Loss:0.29086,Test Loss:1.42183, Train_MSE:0.29086, Train_RMSE:0.53931, Train_MAE:0.35110,Test_MSE:1.42183, Test_RMSE:1.19241, Test_MAE:0.90601, Time:0:00:56
+Epochs:950, Train Loss:0.18314,Test Loss:1.41741, Train_MSE:0.18314, Train_RMSE:0.42795, Train_MAE:0.29901,Test_MSE:1.41741, Test_RMSE:1.19055, Test_MAE:0.91313, Time:0:00:59 *
+Epochs:1000, Train Loss:0.25845,Test Loss:1.54277, Train_MSE:0.25845, Train_RMSE:0.50838, Train_MAE:0.27071,Test_MSE:1.54277, Test_RMSE:1.24208, Test_MAE:0.96137, Time:0:01:02
+Epochs:1050, Train Loss:0.15953,Test Loss:1.44957, Train_MSE:0.15953, Train_RMSE:0.39941, Train_MAE:0.29215,Test_MSE:1.44957, Test_RMSE:1.20398, Test_MAE:0.91219, Time:0:01:05 *
+Epochs:1100, Train Loss:0.13661,Test Loss:1.55734, Train_MSE:0.13661, Train_RMSE:0.36961, Train_MAE:0.24316,Test_MSE:1.55734, Test_RMSE:1.24793, Test_MAE:0.98667, Time:0:01:09 *
+Epochs:1150, Train Loss:0.00939,Test Loss:1.61878, Train_MSE:0.00939, Train_RMSE:0.09688, Train_MAE:0.07343,Test_MSE:1.61878, Test_RMSE:1.27231, Test_MAE:0.99715, Time:0:01:12 *
+Epochs:1200, Train Loss:0.02067,Test Loss:1.40228, Train_MSE:0.02067, Train_RMSE:0.14379, Train_MAE:0.11591,Test_MSE:1.40228, Test_RMSE:1.18418, Test_MAE:0.88769, Time:0:01:15
+Epochs:1250, Train Loss:0.11275,Test Loss:1.34145, Train_MSE:0.11275, Train_RMSE:0.33578, Train_MAE:0.20322,Test_MSE:1.34145, Test_RMSE:1.15821, Test_MAE:0.88480, Time:0:01:18
+Epochs:1300, Train Loss:0.65631,Test Loss:1.33988, Train_MSE:0.65631, Train_RMSE:0.81013, Train_MAE:0.39459,Test_MSE:1.33988, Test_RMSE:1.15753, Test_MAE:0.89756, Time:0:01:21
+Epochs:1350, Train Loss:0.09118,Test Loss:1.20832, Train_MSE:0.09118, Train_RMSE:0.30196, Train_MAE:0.14144,Test_MSE:1.20832, Test_RMSE:1.09924, Test_MAE:0.84281, Time:0:01:24
+Epochs:1400, Train Loss:0.03679,Test Loss:1.26008, Train_MSE:0.03679, Train_RMSE:0.19182, Train_MAE:0.11939,Test_MSE:1.26008, Test_RMSE:1.12253, Test_MAE:0.83567, Time:0:01:27
+Epochs:1450, Train Loss:0.14391,Test Loss:1.28098, Train_MSE:0.14391, Train_RMSE:0.37935, Train_MAE:0.23180,Test_MSE:1.28098, Test_RMSE:1.13180, Test_MAE:0.90885, Time:0:01:30
+Epochs:1500, Train Loss:0.01424,Test Loss:1.32819, Train_MSE:0.01424, Train_RMSE:0.11931, Train_MAE:0.06489,Test_MSE:1.32819, Test_RMSE:1.15247, Test_MAE:0.89999, Time:0:01:33
+Epochs:1550, Train Loss:0.05241,Test Loss:1.28092, Train_MSE:0.05241, Train_RMSE:0.22894, Train_MAE:0.17171,Test_MSE:1.28092, Test_RMSE:1.13178, Test_MAE:0.85883, Time:0:01:36
+Epochs:1600, Train Loss:0.65976,Test Loss:1.13278, Train_MSE:0.65976, Train_RMSE:0.81225, Train_MAE:0.38664,Test_MSE:1.13278, Test_RMSE:1.06432, Test_MAE:0.82258, Time:0:01:39
+Epochs:1650, Train Loss:0.00184,Test Loss:1.31923, Train_MSE:0.00184, Train_RMSE:0.04284, Train_MAE:0.03693,Test_MSE:1.31923, Test_RMSE:1.14858, Test_MAE:0.87937, Time:0:01:42 *
+Epochs:1700, Train Loss:0.06060,Test Loss:1.25930, Train_MSE:0.06060, Train_RMSE:0.24617, Train_MAE:0.18125,Test_MSE:1.25930, Test_RMSE:1.12218, Test_MAE:0.85648, Time:0:01:45
+Epochs:1750, Train Loss:0.06360,Test Loss:1.35928, Train_MSE:0.06360, Train_RMSE:0.25218, Train_MAE:0.14517,Test_MSE:1.35928, Test_RMSE:1.16588, Test_MAE:0.87905, Time:0:01:48
+Epochs:1800, Train Loss:0.00212,Test Loss:1.15102, Train_MSE:0.00212, Train_RMSE:0.04604, Train_MAE:0.04139,Test_MSE:1.15102, Test_RMSE:1.07286, Test_MAE:0.84235, Time:0:01:51
+Epochs:1850, Train Loss:0.08993,Test Loss:1.22332, Train_MSE:0.08993, Train_RMSE:0.29989, Train_MAE:0.13118,Test_MSE:1.22332, Test_RMSE:1.10604, Test_MAE:0.84209, Time:0:01:54
+Epochs:1900, Train Loss:0.02508,Test Loss:1.19148, Train_MSE:0.02508, Train_RMSE:0.15838, Train_MAE:0.08205,Test_MSE:1.19148, Test_RMSE:1.09155, Test_MAE:0.81784, Time:0:01:57
+Epochs:1950, Train Loss:0.02097,Test Loss:1.30813, Train_MSE:0.02097, Train_RMSE:0.14481, Train_MAE:0.09778,Test_MSE:1.30813, Test_RMSE:1.14374, Test_MAE:0.86416, Time:0:02:00
+Epochs:2000, Train Loss:0.00111,Test Loss:1.23290, Train_MSE:0.00111, Train_RMSE:0.03335, Train_MAE:0.02802,Test_MSE:1.23290, Test_RMSE:1.11036, Test_MAE:0.86477, Time:0:02:03 *
+Epochs:2050, Train Loss:0.03024,Test Loss:1.33870, Train_MSE:0.03024, Train_RMSE:0.17391, Train_MAE:0.12943,Test_MSE:1.33870, Test_RMSE:1.15702, Test_MAE:0.90095, Time:0:02:06
+Epochs:2100, Train Loss:0.05468,Test Loss:1.16753, Train_MSE:0.05468, Train_RMSE:0.23384, Train_MAE:0.12546,Test_MSE:1.16753, Test_RMSE:1.08052, Test_MAE:0.82458, Time:0:02:09
+Epochs:2150, Train Loss:0.03878,Test Loss:1.45971, Train_MSE:0.03878, Train_RMSE:0.19692, Train_MAE:0.11883,Test_MSE:1.45971, Test_RMSE:1.20819, Test_MAE:0.92194, Time:0:02:11
+Epochs:2200, Train Loss:0.11324,Test Loss:1.28058, Train_MSE:0.11324, Train_RMSE:0.33651, Train_MAE:0.17856,Test_MSE:1.28058, Test_RMSE:1.13163, Test_MAE:0.87861, Time:0:02:15
+Epochs:2250, Train Loss:0.08123,Test Loss:1.27660, Train_MSE:0.08123, Train_RMSE:0.28500, Train_MAE:0.18392,Test_MSE:1.27660, Test_RMSE:1.12987, Test_MAE:0.85377, Time:0:02:17
+Epochs:2300, Train Loss:0.09087,Test Loss:1.22914, Train_MSE:0.09087, Train_RMSE:0.30145, Train_MAE:0.14020,Test_MSE:1.22914, Test_RMSE:1.10867, Test_MAE:0.84815, Time:0:02:20
+Epochs:2350, Train Loss:0.05229,Test Loss:1.43109, Train_MSE:0.05229, Train_RMSE:0.22867, Train_MAE:0.10698,Test_MSE:1.43109, Test_RMSE:1.19628, Test_MAE:0.91471, Time:0:02:23
+Epochs:2400, Train Loss:0.00065,Test Loss:1.48939, Train_MSE:0.00065, Train_RMSE:0.02545, Train_MAE:0.02032,Test_MSE:1.48939, Test_RMSE:1.22040, Test_MAE:0.93148, Time:0:02:26 *
+Epochs:2450, Train Loss:0.00247,Test Loss:1.63975, Train_MSE:0.00247, Train_RMSE:0.04970, Train_MAE:0.03878,Test_MSE:1.63975, Test_RMSE:1.28053, Test_MAE:0.98414, Time:0:02:29
+Epochs:2500, Train Loss:0.02167,Test Loss:1.56524, Train_MSE:0.02167, Train_RMSE:0.14722, Train_MAE:0.07337,Test_MSE:1.56524, Test_RMSE:1.25109, Test_MAE:0.93945, Time:0:02:32
+Epochs:2550, Train Loss:0.15223,Test Loss:1.59434, Train_MSE:0.15223, Train_RMSE:0.39016, Train_MAE:0.24306,Test_MSE:1.59434, Test_RMSE:1.26267, Test_MAE:0.92752, Time:0:02:35
+Epochs:2600, Train Loss:0.02103,Test Loss:1.65955, Train_MSE:0.02103, Train_RMSE:0.14500, Train_MAE:0.07893,Test_MSE:1.65955, Test_RMSE:1.28824, Test_MAE:0.94617, Time:0:02:38
+Epochs:2650, Train Loss:0.01260,Test Loss:1.84931, Train_MSE:0.01260, Train_RMSE:0.11226, Train_MAE:0.06742,Test_MSE:1.84931, Test_RMSE:1.35989, Test_MAE:1.00807, Time:0:02:41
+Epochs:2700, Train Loss:0.02455,Test Loss:1.65302, Train_MSE:0.02455, Train_RMSE:0.15670, Train_MAE:0.07246,Test_MSE:1.65302, Test_RMSE:1.28570, Test_MAE:0.96386, Time:0:02:44
+Epochs:2750, Train Loss:0.01910,Test Loss:1.56010, Train_MSE:0.01910, Train_RMSE:0.13819, Train_MAE:0.09571,Test_MSE:1.56010, Test_RMSE:1.24904, Test_MAE:0.94581, Time:0:02:47
+Epochs:2800, Train Loss:0.02694,Test Loss:1.68322, Train_MSE:0.02694, Train_RMSE:0.16413, Train_MAE:0.08635,Test_MSE:1.68322, Test_RMSE:1.29739, Test_MAE:0.95847, Time:0:02:51
+Epochs:2850, Train Loss:0.00053,Test Loss:1.74334, Train_MSE:0.00053, Train_RMSE:0.02304, Train_MAE:0.01806,Test_MSE:1.74334, Test_RMSE:1.32036, Test_MAE:0.95287, Time:0:02:54 *
+Epochs:2900, Train Loss:0.08942,Test Loss:1.61815, Train_MSE:0.08942, Train_RMSE:0.29903, Train_MAE:0.12628,Test_MSE:1.61815, Test_RMSE:1.27206, Test_MAE:0.96267, Time:0:02:57
+Epochs:2950, Train Loss:0.00088,Test Loss:1.70602, Train_MSE:0.00088, Train_RMSE:0.02968, Train_MAE:0.02536,Test_MSE:1.70602, Test_RMSE:1.30615, Test_MAE:0.98379, Time:0:03:00
+****************************************************************************************************
+==>加载已训练好的模型...

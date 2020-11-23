@@ -11,10 +11,12 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import mean_absolute_error,mean_squared_error
 import numpy as np
+from torch.autograd import Variable
 from model.utils import *
 import time
 import matplotlib.pyplot as plt
 import utils
+from tensorboardX import SummaryWriter
 
 
 def train(model,config,train_dataloader,test_dataloader): #此处可以加入测试数据的参数
@@ -42,20 +44,21 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
             loss.backward()
             optimizer.step()
 
-        if epoch % 50 == 0:
-            y_train_pred ,Y1= draw_pic(model,config,on_train=True)
-            y_test_pred ,Y1= draw_pic(model,config,on_train=False)
-
-            plt.ion()
-            plt.figure()
-            plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
-            plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1),y_test_pred, label='Predicted - Test')
-
-            plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps),y_train_pred, label='Predicted - Train')
-
-            plt.legend()
-            plt.pause(1)
-            plt.close()
+        #一边训练一边可视化
+        # if epoch % 50 == 0:
+        #     y_train_pred ,Y1= draw_pic(model,config,on_train=True)
+        #     y_test_pred ,Y1= draw_pic(model,config,on_train=False)
+        #
+        #     plt.ion()
+        #     plt.figure()
+        #     plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
+        #     plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1),y_test_pred, label='Predicted - Test')
+        #
+        #     plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps),y_train_pred, label='Predicted - Train')
+        #
+        #     plt.legend()
+        #     plt.pause(1)
+        #     plt.close()
 
         if all_epoch % 50 == 0:
             with torch.no_grad():
@@ -189,3 +192,19 @@ def evaluation(y_true, y_pred):
     RMSE = np.sqrt(mean_squared_error(y_true,y_pred))  #此为均方误差的开平方
 
     return MSE,RMSE,MAE
+
+
+def draw_model_structure(model,config):
+    print("*" * 100)
+
+    model.load_state_dict(torch.load(config.save_model, map_location=torch.device(config.device)))
+
+    print("===>已经加载训练好的模型结构："+config.model_name)
+    dummy_input = torch.rand(128, 10, 20)
+
+    with SummaryWriter(comment='Net') as w:
+        w.add_graph(model,(dummy_input, ))
+    print("===>已经生成可视化的模型结构！")
+
+
+
