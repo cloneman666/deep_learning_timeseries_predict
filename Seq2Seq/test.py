@@ -184,7 +184,9 @@ if __name__ == '__main__':
     #
     # test_dataloader = DataLoader(dataset=test_data,batch_size=config.test_batch_size)
     #
-    # train.train(model, config, train_dataloader,test_dataloader)
+    # # train.train(model, config, train_dataloader,test_dataloader)
+    #
+    # train.test(model,config)
 
 
 

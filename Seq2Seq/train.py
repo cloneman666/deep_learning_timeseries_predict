@@ -46,8 +46,6 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
             y_train_pred ,Y1= draw_pic(model,config,on_train=True)
             y_test_pred ,Y1= draw_pic(model,config,on_train=False)
 
-
-
             plt.ion()
             plt.figure()
             plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
@@ -151,8 +149,28 @@ def draw_pic(model,config,on_train=True):
 
     return y_pred,Y1
 
-def test(model,config,train_data,test_data):
-    pass
+def test(model,config):
+    print("*"*100)
+    print("==>加载已训练好的模型...")
+    model.load_state_dict(torch.load(config.save_model,map_location=torch.device(config.device)))
+
+    y_train_pred, Y1 = draw_pic(model, config, on_train=True)
+    y_test_pred, Y1 = draw_pic(model, config, on_train=False)
+
+    plt.ion()
+
+    plt.figure(figsize=(10,3),dpi=300)
+    plt.title(config.model_name)
+    plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
+    plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1), y_test_pred, label='Predicted - Test')
+
+    plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps), y_train_pred, label='Predicted - Train')
+    plt.tight_layout()
+    plt.legend()
+    # plt.pause(1)
+    # plt.close()
+    plt.savefig('./data/pic/'+config.model_name +'.png')
+    plt.show()
 
 def evaluate(model,config,train_data,test_data):
     pass

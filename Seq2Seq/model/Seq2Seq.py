@@ -140,7 +140,7 @@ class Seq2Seq(nn.Module):
                 self.encoder_optimizer.step()
                 self.decoder_optimizer.step()
 
-            self.test(train_x.cpu(), train_y.cpu(),epoch,config,model)   # 可视化训练中的实际情况
+             # self.test(train_x.cpu(), train_y.cpu(),epoch,config,model)   # 可视化训练中的实际情况
 
             if all_epoch % 10 == 0:
                 if loss < best_loss:
@@ -217,17 +217,17 @@ class Seq2Seq(nn.Module):
             output, loss = self.decoder(train_y.to(config.device), hidden, self.criterion,config)
 
             if epoch % 10 == 0:
-                # y_train_pred, Y1 = draw_pic(model, config, on_train=True)
-                # y_test_pred, Y1 = draw_pic(model, config, on_train=False)
+                y_train_pred, Y1 = draw_pic(model, config, on_train=True)
+                y_test_pred, Y1 = draw_pic(model, config, on_train=False)
 
                 plt.ion()
                 plt.figure()
-                # plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
-                # plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1), y_test_pred,
-                #          label='Predicted - Test')
-                #
-                # plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps), y_train_pred,
-                #          label='Predicted - Train')
+                plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
+                plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1), y_test_pred,
+                         label='Predicted - Test')
+
+                plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps), y_train_pred,
+                         label='Predicted - Train')
 
                 plt.legend()
                 plt.pause(1)
