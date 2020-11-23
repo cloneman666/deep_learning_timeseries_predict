@@ -20,6 +20,8 @@ class Config(object):
     def __init__(self):
         self.model_name = 'Seq2Seq'
 
+        self.dataroot = './data/one_hot_甘.csv'
+
         self.batch_size  = 128
 
         self.ntime_steps = 10 #为时间窗口
@@ -52,14 +54,14 @@ class Encoder(nn.Module):
         self.lstm = nn.LSTM(self.input_size, self.hidden_dim, num_layers=self.num_layers)
         self.hidden = None
 
-    def init_hidden(self, batch_size):
-        return (torch.zeros(self.num_layers,batch_size,self.hidden_dim),
-                torch.zeros(self.num_layers,batch_size,self.hidden_dim))
+    def init_hidden(self, batch_size,config):
+        return torch.zeros(self.num_layers,batch_size,self.hidden_dim).clone().detach().to(config.device),torch.zeros(self.num_layers,batch_size,self.hidden_dim).clone().detach().to(config.device)
 
 
     def forward(self, inputs):
         # Push through RNN layer (the ouput is irrelevant)
         _, self.hidden = self.lstm(inputs, self.hidden)
+
         return self.hidden
 
 
@@ -71,13 +73,13 @@ class Decoder(nn.Module):
         self.lstm = nn.LSTM(1, hidden_size=config.hidden_dim, num_layers=config.num_layers)
         self.out = nn.Linear(config.hidden_dim, 1)
 
-    def forward(self, outputs, hidden, criterion):
+    def forward(self, outputs, hidden, criterion,config):
         batch_size, num_steps = outputs.shape
         # Create initial start value/token
         input = torch.tensor([[0.0]] * batch_size, dtype=torch.float32)
         # Convert (batch_size, output_size) to (seq_len, batch_size, output_size)
         input = input.unsqueeze(0)
-
+        input = input.to(config.device)
         loss = 0
         for i in range(num_steps):
             # Push current input through LSTM: (seq_len=1, batch_size, input_size=1)
@@ -126,18 +128,19 @@ class Seq2Seq(nn.Module):
                 self.decoder_optimizer.zero_grad()
 
                 # Reset hidden state of encoder for current batch
-                self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1])
+                self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1],config)
+
                 # Do forward pass through encoder
                 hidden = self.encoder(train_x)
                 # Do forward pass through decoder (decoder gets hidden state from encoder)
-                output , loss = self.decoder(train_y, hidden, self.criterion)
+                output , loss = self.decoder(train_y, hidden, self.criterion,config)
                 # Backpropagation
                 loss.backward()
                 # Update parameters
                 self.encoder_optimizer.step()
                 self.decoder_optimizer.step()
 
-            self.test(train_x, train_y,epoch)   # 可视化训练中的实际情况
+            self.test(train_x.cpu(), train_y.cpu(),epoch,config,model)   # 可视化训练中的实际情况
 
             if all_epoch % 10 == 0:
                 if loss < best_loss:
@@ -149,7 +152,7 @@ class Seq2Seq(nn.Module):
                     imporve = " "
                 time_dif = utils.get_time_dif(start_time)
 
-                MSE, RMSE, MAE = evaluation(train_y,output.detach().numpy())
+                MSE, RMSE, MAE = evaluation(train_y.cpu(),output.detach().cpu().numpy())
 
                 msg = 'Epochs:{0:d}, Loss:{1:.5f}, MSE:{2:.5f}, RMSE:{3:.5f}, MAE:{4:.5f}, Time:{5} {6}'
 
@@ -202,27 +205,86 @@ class Seq2Seq(nn.Module):
 
 
     #这个函数为边训练边测试的函数
-    def test(self,train_x,train_y,epoch):
+    def test(self,train_x,train_y,epoch,config,model):
 
         with torch.no_grad():
 
-            self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1])
+            self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1],config)
                     # Do forward pass through encoder
+            train_x = train_x.to(config.device)
             hidden = self.encoder(train_x)
                     # Do forward pass through decoder (decoder gets hidden state from encoder)
-            output, loss = self.decoder(train_y, hidden, self.criterion)
+            output, loss = self.decoder(train_y.to(config.device), hidden, self.criterion,config)
 
             if epoch % 10 == 0:
+                # y_train_pred, Y1 = draw_pic(model, config, on_train=True)
+                # y_test_pred, Y1 = draw_pic(model, config, on_train=False)
 
                 plt.ion()
                 plt.figure()
-                plt.plot(range(1, 1 + len(train_y)),train_y,label="True")
-                plt.plot(range(1, 1 + len(output.detach().numpy())), output.detach().numpy(), label="Test")
+                # plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
+                # plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1), y_test_pred,
+                #          label='Predicted - Test')
+                #
+                # plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps), y_train_pred,
+                #          label='Predicted - Train')
+
                 plt.legend()
                 plt.pause(1)
                 plt.close()
 
+def draw_pic(model,config,on_train=True):
+    """
+    此函数为画图函数，将每步的图像进行可视化
+    """
 
+
+    # Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
+
+    X1,Y1 = read_data(config.dataroot)
+    train_timesteps = int(X1.shape[0] * 0.8)
+
+    if on_train:
+        y_pred = np.zeros(train_timesteps - config.ntime_steps + 1)
+    else:
+        y_pred = np.zeros(X1.shape[0] - train_timesteps)
+
+    i = 0
+    while i < len(y_pred):
+        batch_idx = np.array(range(len(y_pred)))[i: (i + config.batch_size)]
+        X = np.zeros((len(batch_idx), config.ntime_steps - 1, X1.shape[1]))
+        y_history = np.zeros((len(batch_idx), config.ntime_steps - 1))
+
+        for j in range(len(batch_idx)):
+            if on_train:
+
+                X[j, :, :] = X1[range(batch_idx[j], batch_idx[j] + config.ntime_steps - 1), :]
+
+                y_history[j, :] = Y1[range(batch_idx[j], batch_idx[j] + config.ntime_steps - 1)]
+
+            else:
+                X[j, :, :] = X1[range(batch_idx[j] + train_timesteps - config.ntime_steps, batch_idx[j] + train_timesteps - 1), :]
+
+                y_history[j, :] = Y1[range(batch_idx[j] + train_timesteps - config.ntime_steps, batch_idx[j] + train_timesteps - 1)]
+
+        #这里用不到
+        # y_history = torch.from_numpy(y_history).type(torch.FloatTensor).to(config.device)
+
+        # train_x, train_y = torch.as_tensor(train_data[0], dtype=torch.float32), torch.as_tensor(train_data[1],
+        #                                                                                         dtype=torch.float32)
+        # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
+        # train_y = train_y.squeeze(2)  # 将最后的1去掉
+
+        y_pred[i:(i+config.batch_size)] = model(torch.as_tensor(X, dtype=torch.float32).to(config.device)).detach().cpu().numpy()[:,0]
+
+
+
+        # _, input_encoded = self.Encoder((torch.from_numpy(X).type(torch.FloatTensor).to(config.device)))
+        #
+        # y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
+        i += config.batch_size
+
+    return y_pred,Y1
 
 def evaluation(y_true, y_pred):
     """

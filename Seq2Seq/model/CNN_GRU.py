@@ -30,7 +30,7 @@ class Config(object):
 
         self.dropout = 0.1
 
-        self.require_improvement = 200
+        self.require_improvement = 1000
 
         self.save_model = './data/check_point/best_CNN_GRU_model_air.pth'
 

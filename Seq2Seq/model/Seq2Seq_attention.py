@@ -42,11 +42,11 @@ class Config(object):
 
         self.ntimestep  = 10   #时间窗口，即为T
 
-        self.epochs  = 1000
+        self.epochs  = 3000
 
         self.lr = 0.001
 
-        self.require_improvement = 100   #超过100轮训练没有提升就结束训练
+        self.require_improvement = 200   #超过100轮训练没有提升就结束训练
 
 class Encoder(nn.Module):
     """encoder in Seq2Seq_Att."""
@@ -337,7 +337,7 @@ class Model(nn.Module):
 
                 ###############此处的评估需要增加#############
 
-                MSE, RMSE, MAE = evaluation(y_predicted.detach().numpy(),y_true)
+                MSE, RMSE, MAE = evaluation(y_predicted.detach().cpu().numpy(),y_true.cpu().numpy())
 
                 msg = 'Epochs:{0:d},Iterations:{1:d}, Loss:{2:.5f}, MSE:{3:.5f}, RMSE:{4:.5f}, MAE:{5:.5f}, Time:{6} {7}'
 
@@ -428,13 +428,16 @@ class Model(nn.Module):
         y_pred = np.concatenate((y_train_pred, y_test_pred))
 
         plt.ioff()
-        plt.figure()
+        plt.figure(figsize=(10,3),dpi=300)
+        plt.title('Seq2Seq + Attention')
         plt.plot(range(1, 1 + len(self.y)), self.y, label="True")
 
         plt.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
 
         plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),y_test_pred, label='Predicted - Test')
+        plt.tight_layout()
         plt.legend(loc='upper left')
+        plt.savefig('./data/pic/seq2seq+Att.png')
         plt.show()
 
 

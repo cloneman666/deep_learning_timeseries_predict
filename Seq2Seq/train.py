@@ -31,8 +31,7 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
     for epoch in range(config.epochs):
 
         for i, train_data in enumerate(train_dataloader):
-            train_x, train_y = torch.as_tensor(train_data[0], dtype=torch.float32), torch.as_tensor(train_data[1],
-                                                                                                    dtype=torch.float32)
+            train_x, train_y = torch.as_tensor(train_data[0], dtype=torch.float32).to(config.device), torch.as_tensor(train_data[1],dtype=torch.float32).to(config.device)
             # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
             train_y = train_y.squeeze(2)  # 将最后的1去掉
 
@@ -51,15 +50,10 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
 
             plt.ion()
             plt.figure()
-
+            plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
             plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1),y_test_pred, label='Predicted - Test')
 
             plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps),y_train_pred, label='Predicted - Train')
-
-            plt.plot(range(1,1 +len(Y1)),Y1,label='True')
-
-            # plt.plot(range(1, 1 + len(train_y)), train_y, label="True")
-            # plt.plot(range(1, 1 + len(output.detach().numpy())), output.detach().numpy(), label="Test")
 
             plt.legend()
             plt.pause(1)
@@ -68,14 +62,14 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
         if all_epoch % 50 == 0:
             with torch.no_grad():
                 for i , test_data in enumerate(test_dataloader):
-                    test_x, test_y = torch.as_tensor(test_data[0], dtype=torch.float32), torch.as_tensor(
+                    test_x, test_y = torch.as_tensor(test_data[0], dtype=torch.float32).to(config.device), torch.as_tensor(
                         test_data[1],
-                        dtype=torch.float32)
+                        dtype=torch.float32).to(config.device)
                     # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
                     test_y = test_y.squeeze(2)  # 将最后的1去掉
                     test_output = model(test_x)
                     test_loss = criterion(test_output,test_y)
-                    test_MSE, test_RMSE, test_MAE = evaluation(test_y, test_output.detach().numpy())
+                    test_MSE, test_RMSE, test_MAE = evaluation(test_y.cpu().numpy(), test_output.detach().cpu().numpy())
 
             if loss < best_loss:
                 best_loss = loss
@@ -86,7 +80,7 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
                 imporve = " "
             time_dif = utils.get_time_dif(start_time)
 
-            MSE, RMSE, MAE = evaluation(train_y, output.detach().numpy())
+            MSE, RMSE, MAE = evaluation(train_y.cpu().numpy(), output.detach().cpu().numpy())
 
             msg = 'Epochs:{0:d}, Train Loss:{1:.5f},Test Loss:{2:.5f}, Train_MSE:{3:.5f}, Train_RMSE:{4:.5f}, Train_MAE:{5:.5f},Test_MSE:{6:.5f}, Test_RMSE:{7:.5f}, Test_MAE:{8:.5f}, Time:{9} {10}'
 
@@ -104,9 +98,11 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
         if flag:
             break
 
-
-
 def draw_pic(model,config,on_train=True):
+    """
+    此函数为画图函数，将每步的图像进行可视化
+    """
+
 
     # Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
 
@@ -144,7 +140,7 @@ def draw_pic(model,config,on_train=True):
         # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
         # train_y = train_y.squeeze(2)  # 将最后的1去掉
 
-        y_pred[i:(i+config.batch_size)] = model(torch.as_tensor(X, dtype=torch.float32)).detach().numpy()[:,0]
+        y_pred[i:(i+config.batch_size)] = model(torch.as_tensor(X, dtype=torch.float32).to(config.device)).detach().cpu().numpy()[:,0]
 
 
 
@@ -155,15 +151,11 @@ def draw_pic(model,config,on_train=True):
 
     return y_pred,Y1
 
-
-
-
 def test(model,config,train_data,test_data):
     pass
 
 def evaluate(model,config,train_data,test_data):
     pass
-
 
 def evaluation(y_true, y_pred):
     """

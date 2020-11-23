@@ -37,11 +37,11 @@ class Config(object):
 
         self.dropout = 0.1
 
-        self.epochs = 2000
+        self.epochs = 3000
 
         self.lr = 0.001
 
-        self.require_improvement = 200  # 超过100轮训练没有提升就结束训练
+        self.require_improvement = 1000  # 超过100轮训练没有提升就结束训练
 
         self.batch_size = 128
         self.test_batch_size = 100
