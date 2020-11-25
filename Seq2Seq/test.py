@@ -23,7 +23,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq类模型进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='Seq2Seq',help='choose a model CNN,LSTM,GRU,Seq2Seq,Seq2Seq_attention,DA_RNN,CNN_LSTM,CNN_GRU')
+    parser.add_argument('--model_name',type=str,default='MySeq2Seq',help='choose a model CNN,LSTM,GRU,Seq2Seq,Seq2Seq_attention,DA_RNN,CNN_LSTM,CNN_GRU')
 
     args = parser.parse_args()
 
@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
     # main_DA_RNN()
     # run_DA_RNN_model()
-    main_Seq2Seq()
+    # main_Seq2Seq()
     #
     # run_Seq2Seq_model()  #有问题
 
@@ -187,7 +187,7 @@ if __name__ == '__main__':
 
     train.train(model, config, train_dataloader,test_dataloader)
     #
-    train.test(model,config)
+    # train.test(model,config)
 
     # train.draw_model_structure(model,config)
 

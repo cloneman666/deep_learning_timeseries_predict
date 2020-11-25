@@ -56,7 +56,7 @@ class Encoder(nn.Module):
     def forward(self, src):
 
         enc_output, enc_hidden = self.lstm(src)
-        s = enc_hidden[-1,:,:]
+        s = enc_hidden[:,-1,:]
 
         return enc_output,s
 

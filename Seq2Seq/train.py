@@ -39,7 +39,7 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
 
             optimizer.zero_grad()
 
-            output = model(train_x)
+            output= model(train_x)
             loss = criterion(output, train_y)
             loss.backward()
             optimizer.step()
