@@ -123,7 +123,6 @@ class Seq2Seq(nn.Module):
                 train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
                 train_y = train_y.squeeze(2)   #将最后的1去掉
 
-
                 self.encoder_optimizer.zero_grad()
                 self.decoder_optimizer.zero_grad()
 
