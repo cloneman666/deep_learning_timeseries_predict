@@ -32,7 +32,7 @@ class Config(object):
 
         self.require_improvement = 100
 
-        self.save_model = './data/check_point/best_seq2seq_model_air.pth'
+        self.save_model = './data/check_point/best_my_seq2seq_model_air.pth'
 
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')

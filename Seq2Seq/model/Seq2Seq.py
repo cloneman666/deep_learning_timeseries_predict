@@ -81,6 +81,7 @@ class Decoder(nn.Module):
         input = input.unsqueeze(0)
         input = input.to(config.device)
         loss = 0
+        outs = []
         for i in range(num_steps):
             # Push current input through LSTM: (seq_len=1, batch_size, input_size=1)
             output, hidden = self.lstm(input, hidden)
@@ -92,7 +93,11 @@ class Decoder(nn.Module):
             # output.squeeze(1)  去除警告，将特定维度降低
             output = output.squeeze(1)
             loss += criterion(output, outputs[:, i])
-        return output,loss
+            outs.append(output)
+
+        hh = torch.stack(outs,dim=1)
+
+        return torch.stack(outs,dim=1),loss
 
 
 class Seq2Seq(nn.Module):

@@ -55,8 +55,10 @@ class Encoder(nn.Module):
 
     def forward(self, src):
 
-        enc_output, enc_hidden = self.lstm(src)
-        s = enc_hidden[:,-1,:]
+        enc_output, (h_n,c_n) = self.lstm(src)
+
+
+        s = torch.cat((h_n[-1],c_n[-1]),dim=1)  #将最后两个隐藏层相加
 
         return enc_output,s
 
