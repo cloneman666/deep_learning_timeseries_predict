@@ -39,7 +39,10 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
 
             optimizer.zero_grad()
 
-            output= model(train_x)
+            if config.model_name =='Seq2Seq+Att':  #训练的时候用于选择模型
+                output = model(train_x,train_y)
+            else:
+                output= model(train_x)
             loss = criterion(output, train_y)
             loss.backward()
             optimizer.step()
@@ -68,7 +71,10 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
                         dtype=torch.float32).to(config.device)
                     # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
                     test_y = test_y.squeeze(2)  # 将最后的1去掉
-                    test_output = model(test_x)
+                    if config.model_name=='Seq2Seq+Att':
+                        test_output = model(test_x,test_y)
+                    else:
+                        test_output = model(test_x)
                     test_loss = criterion(test_output,test_y)
                     test_MSE, test_RMSE, test_MAE = evaluation(test_y.cpu().numpy(), test_output.detach().cpu().numpy())
 
@@ -141,7 +147,11 @@ def draw_pic(model,config,on_train=True):
         # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
         # train_y = train_y.squeeze(2)  # 将最后的1去掉
 
-        y_pred[i:(i+config.batch_size)] = model(torch.as_tensor(X, dtype=torch.float32).to(config.device)).detach().cpu().numpy()[:,0]
+        if config.model_name=='Seq2Seq+Att':
+            y_pred[i:(i + config.batch_size)] = model(
+                torch.as_tensor(X, dtype=torch.float32).to(config.device),torch.as_tensor(y_history,dtype=torch.float32).to(config.device)).detach().cpu().numpy()[:, 0]
+        else:
+            y_pred[i:(i+config.batch_size)] = model(torch.as_tensor(X, dtype=torch.float32).to(config.device)).detach().cpu().numpy()[:,0]
 
 
 
