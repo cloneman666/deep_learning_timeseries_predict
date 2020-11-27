@@ -16,7 +16,6 @@ class Config(object):
 
         self.dataroot = './data/one_hot_甘.csv'
 
-        self.save_model = './data/check_point/best_CNN_model_air_T:'+self.ntime_steps+'D:'+ self.n_next+'.pth'
 
         self.ntime_steps = 10  # 为时间窗口
         self.n_next = 1  # 为往后预测的天数
@@ -31,6 +30,8 @@ class Config(object):
 
         self.batch_size = 128
         self.test_batch_size = 100
+
+        self.save_model = './data/check_point/best_CNN_model_air_T:' + str(self.ntime_steps) + 'D:' + str(self.n_next) + '.pth'
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print("==> Use accelerator: ", self.device)

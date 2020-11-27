@@ -173,7 +173,7 @@ def test(model,config):
     plt.ion()
 
     plt.figure(figsize=(10,3),dpi=300)
-    plt.title(config.model_name)
+    plt.title(config.model_name+'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next))
     plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
     plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1), y_test_pred, label='Predicted - Test')
 
@@ -182,7 +182,7 @@ def test(model,config):
     plt.legend()
     # plt.pause(1)
     # plt.close()
-    plt.savefig('./data/pic/'+config.model_name +'.png')
+    plt.savefig('./data/pic/'+config.model_name +'T:'+str(config.ntime_steps) +'_D:'+str(config.n_next)+'.png')
     plt.show()
 
 def evaluate(model,config,train_data,test_data):

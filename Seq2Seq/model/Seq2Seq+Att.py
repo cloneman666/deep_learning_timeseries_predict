@@ -126,20 +126,12 @@ class Decoder(nn.Module):
 
         dec_output, dec_hidden = self.gru(gru_input, s.unsqueeze(0))
 
-        # embedded = [batch_size, emb_dim]
-        # dec_output = [batch_size, dec_hid_dim]
-        # c = [batch_size, enc_hid_dim * 2]
-        # dec_input = dec_input.squeeze(0)
-
-        # dec_output = dec_output.squeeze(0)
-        # c = c.squeeze(0)
-
         # pred = [batch_size, output_dim]
 
         pred = self.fc_out(torch.cat((dec_output, c, dec_input), dim=2))
-        pred = pred.permute(0,2,1).squeeze(2)
+        pred = pred.permute(0,2,1)
 
-        return pred,dec_hidden
+        return pred,dec_hidden.squeeze(0)
 
 
 class Model(nn.Module):
@@ -172,10 +164,11 @@ class Model(nn.Module):
             # receive output tensor (predictions) and new hidden state
             dec_output, s = self.decoder(trg,s, enc_output)  #dec_input
 
-            # hh = dec_output[:,-1,:]
-            # hh2 = outputs[t:]
+            hh = dec_output[:,-1,:]
+
+
             # place predictions in a tensor holding predictions for each token
-            outputs[t:] = dec_output
+            outputs[t:] = dec_output[:,-1,:]
 
             # decide if we are going to use teacher forcing or not
             teacher_force = random.random() < teacher_forcing_ratio
@@ -185,7 +178,7 @@ class Model(nn.Module):
 
             # if teacher forcing, use actual next token as next input
             # if not, use predicted token
-            trg = trg[t] if teacher_force else top1
+            trg = trg[t]  #if teacher_force else top1
 
         return outputs
 
