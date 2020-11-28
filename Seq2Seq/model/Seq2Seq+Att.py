@@ -20,8 +20,8 @@ class Config(object):
         self.batch_size = 128
         self.test_batch_size = 100
 
-        self.ntime_steps = 10  # 为时间窗口
-        self.n_next = 3  # 为往后预测的天数
+        self.ntime_steps = 30  # 为时间窗口
+        self.n_next = 7  # 为往后预测的天数
 
         self.input_size = 20  # 输入数据的维度
 
@@ -33,9 +33,9 @@ class Config(object):
         self.epochs = 2000
         self.lr = 0.001
 
-        self.require_improvement = 100
+        self.require_improvement = 1000
 
-        self.save_model = './data/check_point/best_seq2seq_Att_model_air.pth'
+        self.save_model = './data/check_point/best_Seq2Seq+Att_model_air_T:' + str(self.ntime_steps) + 'D:' + str(self.n_next) + '.pth'
 
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -152,7 +152,9 @@ class Model(nn.Module):
         n_next = self.decoder.n_next   #往后预测的天数
 
         # tensor to store decoder outputs   作为存储decoder层的输出  类似（128，1）
-        outputs = torch.zeros(batch_size, n_next) #.to(self.device)
+        # outputs = torch.zeros(batch_size, n_next) #.to(self.device)
+
+        # outputs = []
 
         # enc_output is all hidden states of the input sequence, back and forwards
         # s is the final forward and backward hidden states, passed through a linear layer
@@ -164,22 +166,26 @@ class Model(nn.Module):
             # receive output tensor (predictions) and new hidden state
             dec_output, s = self.decoder(trg,s, enc_output)  #dec_input
 
-            hh = dec_output[:,-1,:]
-
+            # hh = dec_output[-1]  #最后一层的数据
 
             # place predictions in a tensor holding predictions for each token
-            outputs[t:] = dec_output[:,-1,:]
+            # outputs[t] = dec_output[:,-1,:]
+
+            # output = dec_output[:,-1,:]
 
             # decide if we are going to use teacher forcing or not
-            teacher_force = random.random() < teacher_forcing_ratio
+            # teacher_force = random.random() < teacher_forcing_ratio
 
             # get the highest predicted token from our predictions
-            top1 = dec_output.argmax(1)
+            # top1 = dec_output.argmax(2)
 
-            # if teacher forcing, use actual next token as next input
-            # if not, use predicted token
-            trg = trg[t]  #if teacher_force else top1
+            trg = dec_output.squeeze(2) #if teacher_force else top1
 
-        return outputs
+            # outputs.append(dec_output)
+
+        # outputs = torch.cat(outputs,dim=1)
+
+        # outputs = torch.stack(outputs)
+        return dec_output.squeeze(2)
 
 

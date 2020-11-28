@@ -23,6 +23,7 @@ from tqdm import tqdm
 from sklearn.metrics import mean_absolute_error,mean_squared_error
 import time
 import utils
+import logging
 
 class Config(object):
     def __init__(self):
@@ -250,6 +251,11 @@ class Model(nn.Module):
         self.input_size = self.X.shape[1]
 
     def train(self,model,config):  #参数model用于将模型保存时用到，config 用于存储模型位置的时候用到
+
+        logging_name = config.model_name + '_D:' + str(config.ntimestep) + '_D:1'
+        logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', filename='./log/' + logging_name + '.log',
+                            level=logging.INFO)
+
         """Training process."""
         iter_per_epoch = int(
             np.ceil(self.train_timesteps * 1. / self.batch_size))
@@ -310,7 +316,7 @@ class Model(nn.Module):
                 y_pred = np.concatenate((y_train_pred, y_test_pred))
                 plt.ion()
                 plt.figure()
-                plt.plot(range(1, 1 + len(self.y)), self.y, label="True")
+                plt.plot(range(1, 1 + len(self.y)), self.y, label="Ground Truth")
                 plt.plot(range(self.T, len(y_train_pred) + self.T),
                          y_train_pred, label='Predicted - Train')
                 plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),
@@ -340,6 +346,7 @@ class Model(nn.Module):
                 msg = 'Epochs:{0:d},Iterations:{1:d}, Loss:{2:.5f}, MSE:{3:.5f}, RMSE:{4:.5f}, MAE:{5:.5f}, Time:{6} {7}'
 
                 print(msg.format(epoch, n_iter,self.epoch_losses[epoch], MSE, RMSE, MAE, time_dif, imporve))
+                logging.info(msg.format(epoch, n_iter,self.epoch_losses[epoch], MSE, RMSE, MAE, time_dif, imporve))
 
                 ###########################################
 
@@ -419,7 +426,7 @@ class Model(nn.Module):
 
         return y_pred
 
-    def test_model(self):
+    def test_model(self,config):
 
         y_train_pred = self.test(on_train=True)
         y_test_pred = self.test(on_train=False)
@@ -427,15 +434,15 @@ class Model(nn.Module):
 
         plt.ioff()
         plt.figure(figsize=(10,3),dpi=300)
-        plt.title('DA_RNN')
-        plt.plot(range(1, 1 + len(self.y)), self.y, label="True")
+        plt.title('DA_RNN_T:'+str(config.ntimestep)+'D:1')
+        plt.plot(range(1, 1 + len(self.y)), self.y, label="Ground Truth")
 
         plt.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
 
         plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),y_test_pred, label='Predicted - Test')
         plt.tight_layout()
         plt.legend(loc='upper left')
-        plt.savefig('./data/pic/DA_RNN.png')
+        plt.savefig('./data/pic/DA_RNN_T:'+str(config.ntimestep)+'D:1.png')
         plt.show()
 
 

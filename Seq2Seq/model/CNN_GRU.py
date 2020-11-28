@@ -19,7 +19,7 @@ class Config(object):
         self.test_batch_size = 100
 
         self.ntime_steps = 10  # 为时间窗口
-        self.n_next = 1  # 为往后预测的天数
+        self.n_next = 2  # 为往后预测的天数
 
         self.input_size = 20  # 输入数据的维度
         self.hidden_dim = 100  # 隐藏层的大小
@@ -32,7 +32,7 @@ class Config(object):
 
         self.require_improvement = 1000
 
-        self.save_model = './data/check_point/best_CNN_GRU_model_air_T:'+self.ntime_steps+'D:'+ self.n_next+'.pth'
+        self.save_model = './data/check_point/best_CNN_GRU_model_air_T:'+str(self.ntime_steps)+'D:'+ str(self.n_next)+'.pth'
 
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')

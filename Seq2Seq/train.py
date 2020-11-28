@@ -16,13 +16,23 @@ from model.utils import *
 import time
 import matplotlib.pyplot as plt
 import utils
+import logging
+
 from tensorboardX import SummaryWriter
 
 
 def train(model,config,train_dataloader,test_dataloader): #此处可以加入测试数据的参数
+
+    logging_name = config.model_name + '_D:'+str(config.ntime_steps) +'_D:'+ str(config.n_next)
+    logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', filename='./log/'+logging_name+'.log', level=logging.INFO)
+
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=config.lr)
     print('==>开始训练...')
+
+    logging.info('使用模型：'+config.model_name)
+    logging.info("==> Use accelerator: "+str(config.device))
+
     best_loss = float('inf')  # 记录最小的损失，，这里不好加一边训练一边保存的代码，无穷大量
     all_epoch = 0  # 记录进行了多少个epoch
     last_imporve = 0  # 记录上次校验集loss下降的batch数
@@ -71,10 +81,12 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
                         dtype=torch.float32).to(config.device)
                     # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
                     test_y = test_y.squeeze(2)  # 将最后的1去掉
+
                     if config.model_name=='Seq2Seq+Att':
                         test_output = model(test_x,test_y)
                     else:
                         test_output = model(test_x)
+
                     test_loss = criterion(test_output,test_y)
                     test_MSE, test_RMSE, test_MAE = evaluation(test_y.cpu().numpy(), test_output.detach().cpu().numpy())
 
@@ -93,6 +105,8 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
 
             print(msg.format(epoch, loss.item(),test_loss.item(), MSE, RMSE, MAE,test_MSE, test_RMSE, test_MAE, time_dif, imporve))
 
+            #记录到日志文件
+            logging.info(msg.format(epoch, loss.item(),test_loss.item(), MSE, RMSE, MAE,test_MSE, test_RMSE, test_MAE, time_dif, imporve))
 
         all_epoch = all_epoch + 1
 
@@ -174,7 +188,7 @@ def test(model,config):
 
     plt.figure(figsize=(10,3),dpi=300)
     plt.title(config.model_name+'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next))
-    plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
+    plt.plot(range(1, 1 + len(Y1)), Y1, label='Ground Truth')
     plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1), y_test_pred, label='Predicted - Test')
 
     plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps), y_train_pred, label='Predicted - Train')
@@ -182,7 +196,7 @@ def test(model,config):
     plt.legend()
     # plt.pause(1)
     # plt.close()
-    plt.savefig('./data/pic/'+config.model_name +'T:'+str(config.ntime_steps) +'_D:'+str(config.n_next)+'.png')
+    plt.savefig('./data/pic/'+config.model_name +'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next)+'.png')
     plt.show()
 
 def evaluate(model,config,train_data,test_data):

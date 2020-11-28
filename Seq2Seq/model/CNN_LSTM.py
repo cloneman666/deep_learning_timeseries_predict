@@ -30,10 +30,11 @@ class Config(object):
 
         self.dataroot = './data/one_hot_甘.csv'
 
-        self.save_model = './data/check_point/best_CNN_LSTM_model_air_T:'+self.ntime_steps+'D:'+ self.n_next+'.pth'
 
         self.ntime_steps = 10  # 为时间窗口
-        self.n_next = 1  # 为往后预测的天数
+        self.n_next = 2  # 为往后预测的天数
+
+        self.save_model = './data/check_point/best_CNN_LSTM_model_air_T:' + str(self.ntime_steps) + 'D:' + str(self.n_next) + '.pth'
 
         self.dropout = 0.1
 
