@@ -22,8 +22,9 @@ from tensorboardX import SummaryWriter
 
 
 def train(model,config,train_dataloader,test_dataloader): #此处可以加入测试数据的参数
+    writer = SummaryWriter('./log/'+ config.model_name + '_T:' +str(config.ntime_steps) + '_D:'+ str(config.n_next))
 
-    logging_name = config.model_name + '_D:'+str(config.ntime_steps) +'_D:'+ str(config.n_next)
+    logging_name = config.model_name + '_T:'+str(config.ntime_steps) +'_D:'+ str(config.n_next)
     logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', filename='./log/'+logging_name+'.log', level=logging.INFO)
 
     criterion = nn.MSELoss()
@@ -39,7 +40,7 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
     flag = False  # 记录是否很久没有效果提升，停止训练
 
     start_time = time.time()
-
+    model.train()
     for epoch in range(config.epochs):
 
         for i, train_data in enumerate(train_dataloader):
@@ -74,6 +75,7 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
         #     plt.close()
 
         if all_epoch % 50 == 0:
+            model.eval()
             with torch.no_grad():
                 for i , test_data in enumerate(test_dataloader):
                     test_x, test_y = torch.as_tensor(test_data[0], dtype=torch.float32).to(config.device), torch.as_tensor(
@@ -105,6 +107,11 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
 
             print(msg.format(epoch, loss.item(),test_loss.item(), MSE, RMSE, MAE,test_MSE, test_RMSE, test_MAE, time_dif, imporve))
 
+            writer.add_scalar('train/loss',loss.item(),epoch)
+            writer.add_scalars('train/scalars',{'MSE':MSE,'RMSE':RMSE,'MAE':MAE},epoch)
+            # writer.add_scalar('train/RMSE',RMSE,epoch)
+            # writer.add_scalar('train/MAE',MAE,epoch)
+
             #记录到日志文件
             logging.info(msg.format(epoch, loss.item(),test_loss.item(), MSE, RMSE, MAE,test_MSE, test_RMSE, test_MAE, time_dif, imporve))
 
@@ -113,10 +120,12 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
         if all_epoch - last_imporve > config.require_improvement:
             # 在验证集合上loss超过1000batch没有下降，结束训练
             print('==>在校验数据集合上已经很长时间没有提升了，模型自动停止训练')
+            writer.close()
             flag = True
             break
 
         if flag:
+            writer.close()
             break
 
 def draw_pic(model,config,on_train=True):

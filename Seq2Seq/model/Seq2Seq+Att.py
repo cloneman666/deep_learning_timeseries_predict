@@ -30,7 +30,7 @@ class Config(object):
 
         self.dropout = 0.1
         self.num_layers = 1
-        self.epochs = 2000
+        self.epochs = 5000
         self.lr = 0.001
 
         self.require_improvement = 1000

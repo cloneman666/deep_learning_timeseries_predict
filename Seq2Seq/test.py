@@ -1,20 +1,12 @@
-import torch
+import os
 import argparse
-import numpy as np
-import pandas as pd
-from torch import nn
-from torch import optim
-import torch.nn.functional as F
-import matplotlib.pyplot as plt
 
-from torch.autograd import Variable
-from torch.utils.data import DataLoader
 from model.utils import *  #每个函数内部的方法
 from model.DA_RNN import *
 from importlib import import_module  #动态加载不同的模块
 import train
 import utils   #这个为计算时间的方法，为公共方法，所以定义在外面
-
+from model.Random_Forest import *
 
 
 def parse_args():
@@ -23,7 +15,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq类模型进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='GRU',help='choose a model CNN,LSTM,GRU,Seq2Seq,Seq2Seq+Att,DA_RNN,CNN_LSTM,CNN_GRU')
+    parser.add_argument('--model_name',type=str,default='LSTM_CNN',help='choose a model CNN,LSTM,GRU,Seq2Seq,Seq2Seq+Att,DA_RNN,CNN_LSTM,CNN_GRU')
 
     args = parser.parse_args()
 
@@ -141,8 +133,21 @@ def run_Seq2Seq_model():
     model.load_state_dict(torch.load(config.save_model))
     model.test_model()    # 测试有问题
 
+#随机森林方法预测
+def RF():
+    # ntime_steps = 10
+    # n_next = 1
+    # Train_X, Train_Y, Test_X, Test_Y = get_data(ntime_steps, n_next, hasTest=True)
+
+    X, y = read_data('./data/one_hot_甘.csv', debug=False)
+
+
+
+    train(X,y)
 
 if __name__ == '__main__':
+
+    RF()
 
 
     # main_DA_RNN()
@@ -154,42 +159,47 @@ if __name__ == '__main__':
 #############################################################
     #   CNN_LSTM   CNN_GRU
 
-    np.random.seed(1)
-    torch.manual_seed(1)
-    torch.cuda.manual_seed_all(1)
-    torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
+    # np.random.seed(1)
+    # torch.manual_seed(1)
+    # torch.cuda.manual_seed_all(1)
+    # torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
+    # #
+    # args = parse_args()  # 加载所选模型的名字
+    # model_name = args.model_name
+    # x = import_module('model.' + model_name)
+    # config = x.Config()
     #
-    args = parse_args()  # 加载所选模型的名字
-    model_name = args.model_name
-    x = import_module('model.' + model_name)
-    config = x.Config()
-
-    model = x.Model(config)
-    model = model.to(config.device)
-
-    print('==>当前使用的模型为：' + model_name)
-
-    print('==>加载数据中...')
-
-    Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
-
-    # ntime_steps   为时间窗口T
-    # n_next        为想要预测的天数
-    train_data = MyDataset(Train_X,Train_Y)
-
-    test_data = MyDataset(Test_X,Test_Y)
-
-
-    train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
-
-    test_dataloader = DataLoader(dataset=test_data,batch_size=config.test_batch_size)
-
-
-    train.train(model, config, train_dataloader,test_dataloader)
+    # model = x.Model(config)
+    # model = model.to(config.device)
     #
-    train.test(model,config)
-
-    # train.draw_model_structure(model,config)
+    # print('==>当前使用的模型为：' + model_name +'_T：'+str(config.ntime_steps) + '_D:'+ str(config.n_next))
+    #
+    # print('==>加载数据中...')
+    #
+    # Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
+    #
+    # # ntime_steps   为时间窗口T
+    # # n_next        为想要预测的天数
+    # train_data = MyDataset(Train_X,Train_Y)
+    #
+    # test_data = MyDataset(Test_X,Test_Y)
+    #
+    #
+    # train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
+    #
+    # test_dataloader = DataLoader(dataset=test_data,batch_size=config.test_batch_size)
+    #
+    # flag = os.path.exists(config.save_model)
+    # if flag==True:
+    #     print('====>该模型已经训练过！直接进行测试')
+    #     train.test(model, config)
+    #
+    # else:
+    #     train.train(model, config, train_dataloader,test_dataloader)
+    #
+    #     train.test(model,config)
+    #
+    # # train.draw_model_structure(model,config)  #画出模型的结构
 
 
 
