@@ -71,8 +71,8 @@ def GetBestWay(model,X_train, Y_train):
 
 
 #随机森林的训练方法
-def train(X_train,Y_train,X_test,Y_test,ALL_Y):  # ,X_test,Y_test
-
+def trainRF(X_train,Y_train,X_test,Y_test,ALL_Y):  # ,X_test,Y_test
+    print('======>随机森林')
     model = RandomForestRegressor(
         n_estimators=50,
         max_depth=3,
@@ -114,7 +114,7 @@ def train(X_train,Y_train,X_test,Y_test,ALL_Y):  # ,X_test,Y_test
     logging.info(msg.format(train_MSE, train_RMSE, train_MAE,test_MSE ,test_RMSE,test_MAE,time_dif))
 
     plt.figure(figsize=(10,3),dpi=300)
-    plt.title('Random Forest predicts ticket prices')
+    plt.title('Random Forest Predicts Ticket Prices')
 
     plt.plot(range(len(ALL_Y)),ALL_Y,label='Ground Truth')
 

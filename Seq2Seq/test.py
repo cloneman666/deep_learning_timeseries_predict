@@ -148,7 +148,7 @@ def RF():
     train_y = y[:train_size]
     test_y = y[train_size:]
 
-    train(train_x,train_y,test_x,test_y,y)
+    trainRF(train_x,train_y,test_x,test_y,y)
 
 #移动平均算法
 def ARIMA():
@@ -162,12 +162,12 @@ def ARIMA():
     train_y = y[:train_size]
     test_y = y[train_size:]
 
-    train(train_x, train_y, test_x, test_y, y)
+    train_ARIMA(train_x, train_y, test_x, test_y, y)
 
 
 if __name__ == '__main__':
 
-    RF()  #随机森林
+    # RF()  #随机森林
     ARIMA()  #移动平均算法
 
 
