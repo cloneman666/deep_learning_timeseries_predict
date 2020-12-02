@@ -164,11 +164,12 @@ def ARIMA():
 
     train_ARIMA(train_x, train_y, test_x, test_y, y)
 
+    draw_arima()
 
 if __name__ == '__main__':
 
-    # RF()  #随机森林
-    ARIMA()  #移动平均算法
+    RF()  #随机森林
+    # ARIMA()  #移动平均算法
 
 
     # main_DA_RNN()
