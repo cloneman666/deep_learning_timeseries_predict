@@ -8,6 +8,7 @@ import train
 import utils   #这个为计算时间的方法，为公共方法，所以定义在外面
 from model.Random_Forest import *
 from model.ARIMA import *
+from model.GBRT import *
 
 def parse_args():
     """Parse arguments."""
@@ -166,10 +167,27 @@ def ARIMA():
 
     draw_arima()
 
+
+def GBRT():
+    X, y = read_data('./data/one_hot_甘.csv', debug=False)
+
+    train_size = int(len(X) * 0.8)
+
+    train_x = X[:train_size]
+    test_x = X[train_size:]
+
+    train_y = y[:train_size]
+    test_y = y[train_size:]
+
+    train_GBRT(train_x, train_y, test_x, test_y, y)
+
+
 if __name__ == '__main__':
 
     RF()  #随机森林
     # ARIMA()  #移动平均算法
+
+    GBRT()   #渐进递归回归树（Gradient Boosting Regression）
 
 
     # main_DA_RNN()

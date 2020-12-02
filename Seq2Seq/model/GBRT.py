@@ -1,27 +1,22 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-# @Time    : 11/29/20 8:24 PM
+# @Time    : 12/2/20 4:25 PM
 # @Author  : Cloneman
 # @Email   : 1171836398@qq.com
-# @File    : Random_Forest.py
+# @File    : GBRT.py
 # @Software: PyCharm
 
-
-# https://www.cnblogs.com/nolonely/p/7007961.html
-
 import numpy as np
+import time
 from scipy.stats import randint as sp_randint
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error,mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV,GridSearchCV
 from utils import *
 import matplotlib.pyplot as plt
-import time
 import logging
-# 通过下面的方式进行简单配置输出方式与日志级别
-logging.basicConfig(filename='./log/RF.log', level=logging.INFO)
+logging.basicConfig(filename='./log/GBRT.log', level=logging.INFO)
 
-#计算随机森林中最好的参数配置信息
 def GetBestWay(model,X_train, Y_train):
     print("==========下面是RandomizedSearchCV的测试结果===============")
     logging.info("==========下面是RandomizedSearchCV的测试结果===============")
@@ -31,10 +26,10 @@ def GetBestWay(model,X_train, Y_train):
     param_dist = {
         "n_estimators": n_estimators,
         "max_depth": [2,3,4,5, None],
-        "max_features": sp_randint(1, 11),
-        "min_samples_split": sp_randint(2, 11),
-        "min_samples_leaf": sp_randint(1, 11),
-        "bootstrap": [True, False],
+        "max_features": range(1, 11,1),
+        "min_samples_split": range(2, 11,1),
+        "min_samples_leaf": range(1, 11,1),
+        "learning_rate":[0.01,0.1,0.001]
     }
     n_iter_search = 100
     random_search = RandomizedSearchCV(model, param_distributions=param_dist, n_iter=n_iter_search)
@@ -55,7 +50,7 @@ def GetBestWay(model,X_train, Y_train):
         "max_features": [1, 3, 10],
         "min_samples_split": [2, 3, 10],
         "min_samples_leaf": [1, 3, 10],
-        "bootstrap": [True, False],
+        "learning_rate": [0.01, 0.1, 0.001]
     }
     # 开启超参数空间的网格搜索
     grid_search = GridSearchCV(model, param_grid=param_grid)
@@ -68,75 +63,60 @@ def GetBestWay(model,X_train, Y_train):
     report(random_search.cv_results_)
 
 
-#随机森林的训练方法
-def trainRF(X_train,Y_train,X_test,Y_test,ALL_Y):  # ,X_test,Y_test
-    print('======>随机森林')
-    model = RandomForestRegressor()
-    # 'bootstrap': False, 'max_depth': 3, 'max_features': 6, 'min_samples_leaf': 7, 'min_samples_split': 7, 'n_estimators': 50
+def train_GBRT(X_train,Y_train,X_test,Y_test,ALL_Y):
+    print('=======>GBRT算法')
+    model = GradientBoostingRegressor(
+        n_estimators=250,
+        min_samples_split=6,
+        min_samples_leaf=1,
+        max_features=9,
+        max_depth=2,
+        learning_rate=0.01
+    )
 
-    # n_estimators = 50,
-    # max_depth = 3,
-    # min_samples_leaf = 7,
-    # min_samples_split = 7,
-    # max_features = 6,
-    # # bootstrap=False,
-    # oob_score = True
-
-    # n_estimators = 300,
-    # max_depth = 3,
-    # min_samples_leaf = 2,
-    # min_samples_split = 5,
-    # max_features = 6,
-    # bootstrap = False
-
-
-    # GetBestWay(model,X_train,Y_train)  #计算最优的参数配置
+    # n_estimators
+    # ': 250, '
+    # min_samples_split
+    # ': 6, '
+    # min_samples_leaf
+    # ': 1, '
+    # max_features
+    # ': 9, '
+    # max_depth
+    # ': 2, '
+    # learning_rate
+    # ': 0.01}
 
     start_time = time.time()
 
+    # GetBestWay(model, X_train, Y_train)
+
     model.fit(X_train,Y_train)
-    # print(model.oob_score_)
 
     y_pred_train = model.predict(X_train)
     y_pred_test = model.predict(X_test)
 
-    train_MSE, train_RMSE, train_MAE = evaluation(y_pred_train,Y_train)
+    train_MSE, train_RMSE, train_MAE = evaluation(y_pred_train, Y_train)
 
-    test_MSE ,test_RMSE,test_MAE = evaluation(y_pred_test,Y_test)
+    test_MSE, test_RMSE, test_MAE = evaluation(y_pred_test, Y_test)
 
     time_dif = get_time_dif(start_time)
 
-    logging.info('===>开始测试')
     msg = 'Train_MSE:{0:.5f}, Train_RMSE:{1:.5f}, Train_MAE:{2:.5f},Test_MSE:{3:.5f}, Test_RMSE:{4:.5f}, Test_MAE:{5:.5f},Time:{6}'
-    print(msg.format(train_MSE, train_RMSE, train_MAE,test_MSE ,test_RMSE,test_MAE,time_dif))
-    logging.info(msg.format(train_MSE, train_RMSE, train_MAE,test_MSE ,test_RMSE,test_MAE,time_dif))
+    print(msg.format(train_MSE, train_RMSE, train_MAE, test_MSE, test_RMSE, test_MAE, time_dif))
 
-    plt.figure(figsize=(10,3),dpi=300)
-    plt.title('Random Forest Predicts Ticket Prices')
+    plt.figure(figsize=(10, 3), dpi=300)
+    plt.title('GBRT Predicts Ticket Prices')
 
-    plt.plot(range(len(ALL_Y)),ALL_Y,label='Ground Truth')
+    plt.plot(range(len(ALL_Y)), ALL_Y, label='Ground Truth')
 
-    plt.plot(range(len(Y_train)),y_pred_train,label='Predicted - Train')
-    plt.plot(range(len(Y_train),len(Y_train)+len(Y_test)),y_pred_test,label='Predicted - Test')
+    plt.plot(range(len(Y_train)), y_pred_train, label='Predicted - Train')
+    plt.plot(range(len(Y_train), len(Y_train) + len(Y_test)), y_pred_test, label='Predicted - Test')
 
     plt.legend(loc='upper left')
     plt.tight_layout()
-    plt.savefig('./data/pic/Random_Forest.png')
+    plt.savefig('./data/pic/GBRT.png')
     plt.show()
-
-
-
-def report(results,n_top=3):
-    for i in range(1,n_top+1):
-        candidates=np.flatnonzero(results['rank_test_score']==i)
-        for candidate in candidates:
-            print("Model with rank:{0}".format(i))
-            print("Mean validation score:{0:.3f}(std:{1:.3f})".format(
-                results['mean_test_score'][candidate],
-                results['std_test_score'][candidate]))
-            print("Parameters:{0}".format(results['params'][candidate]))
-            print("")
-
 
 def evaluation(y_true, y_pred):
     """
@@ -152,3 +132,15 @@ def evaluation(y_true, y_pred):
     RMSE = np.sqrt(mean_squared_error(y_true,y_pred))  #此为均方误差的开平方
 
     return MSE,RMSE,MAE
+
+
+def report(results,n_top=3):
+    for i in range(1,n_top+1):
+        candidates=np.flatnonzero(results['rank_test_score']==i)
+        for candidate in candidates:
+            print("Model with rank:{0}".format(i))
+            print("Mean validation score:{0:.3f}(std:{1:.3f})".format(
+                results['mean_test_score'][candidate],
+                results['std_test_score'][candidate]))
+            print("Parameters:{0}".format(results['params'][candidate]))
+            print("")

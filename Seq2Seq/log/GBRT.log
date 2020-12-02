@@ -1,0 +1,28 @@
+=======>GBRT算法
+==========下面是RandomizedSearchCV的测试结果===============
+RandomizedSearchCV 一共迭代：100 花费时间:0:00:50
+Model with rank:1
+Mean validation score:0.109(std:0.113)
+Parameters:{'n_estimators': 250, 'min_samples_split': 6, 'min_samples_leaf': 1, 'max_features': 9, 'max_depth': 2, 'learning_rate': 0.01}
+
+Model with rank:2
+Mean validation score:0.107(std:0.104)
+Parameters:{'n_estimators': 500, 'min_samples_split': 8, 'min_samples_leaf': 2, 'max_features': 2, 'max_depth': 2, 'learning_rate': 0.01}
+
+Model with rank:3
+Mean validation score:0.107(std:0.111)
+Parameters:{'n_estimators': 200, 'min_samples_split': 4, 'min_samples_leaf': 6, 'max_features': 6, 'max_depth': 2, 'learning_rate': 0.01}
+
+==========下面是GridSearchCV的测试结果===============
+GridSearchCV 花费时间:0:01:11 参数设置:18
+Model with rank:1
+Mean validation score:0.109(std:0.113)
+Parameters:{'n_estimators': 250, 'min_samples_split': 6, 'min_samples_leaf': 1, 'max_features': 9, 'max_depth': 2, 'learning_rate': 0.01}
+
+Model with rank:2
+Mean validation score:0.107(std:0.104)
+Parameters:{'n_estimators': 500, 'min_samples_split': 8, 'min_samples_leaf': 2, 'max_features': 2, 'max_depth': 2, 'learning_rate': 0.01}
+
+Model with rank:3
+Mean validation score:0.107(std:0.111)
+Parameters:{'n_estimators': 200, 'min_samples_split': 4, 'min_samples_leaf': 6, 'max_features': 6, 'max_depth': 2, 'learning_rate': 0.01}
