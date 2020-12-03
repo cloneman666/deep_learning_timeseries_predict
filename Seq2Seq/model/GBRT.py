@@ -96,6 +96,9 @@ def train_GBRT(X_train,Y_train,X_test,Y_test,ALL_Y):
     y_pred_train = model.predict(X_train)
     y_pred_test = model.predict(X_test)
 
+    print(f'训练的精确度：{model.score(X_train,Y_train)}')
+    print(f'测试的精确度：{model.score(X_test,Y_test)}')
+
     train_MSE, train_RMSE, train_MAE = evaluation(y_pred_train, Y_train)
 
     test_MSE, test_RMSE, test_MAE = evaluation(y_pred_test, Y_test)

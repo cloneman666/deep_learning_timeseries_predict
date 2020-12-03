@@ -33,13 +33,16 @@ class Config(object):
 
         self.batchsize = 128
 
-        self.save_model = './data/check_point/best_DA_RNN_air.pth'
+
 
         self.nhidden_encoder  = 128
 
         self.nhidden_decoder  = 128
 
-        self.ntimestep  = 10   #时间窗口，即为T
+        self.ntimestep  = 30   #时间窗口，即为T
+        self.n_next = 1  # 为往后预测的天数
+
+        self.save_model = './data/check_point/best_DA_RNN_air_T:'+str(self.ntimestep)+'_D:'+str(self.n_next)+'.pth'
 
         self.epochs  = 3000
 
@@ -137,12 +140,13 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     """decoder in Seq2Seq_Att."""
 
-    def __init__(self, T, decoder_num_hidden, encoder_num_hidden):
+    def __init__(self, T, decoder_num_hidden, encoder_num_hidden,n_next):
         """Initialize a decoder in DA_RNN."""
         super(Decoder, self).__init__()
         self.decoder_num_hidden = decoder_num_hidden
         self.encoder_num_hidden = encoder_num_hidden
         self.T = T
+        self.n_next = n_next
 
         self.attn_layer = nn.Sequential(
             nn.Linear(2 * decoder_num_hidden +
@@ -155,7 +159,7 @@ class Decoder(nn.Module):
             hidden_size=decoder_num_hidden
         )
         self.fc = nn.Linear(encoder_num_hidden + 1, 1)
-        self.fc_final = nn.Linear(decoder_num_hidden + encoder_num_hidden, 1)
+        self.fc_final = nn.Linear(decoder_num_hidden + encoder_num_hidden, self.n_next)
 
         self.fc.weight.data.normal_()
 
@@ -229,7 +233,7 @@ class Model(nn.Module):
                                T=config.ntimestep).to(self.device)
         self.Decoder = Decoder(encoder_num_hidden=config.nhidden_encoder,
                                decoder_num_hidden=config.nhidden_decoder,
-                               T=config.ntimestep).to(self.device)
+                               T=config.ntimestep,n_next=config.n_next).to(self.device)
 
         # Loss function
         self.criterion = nn.MSELoss()
@@ -252,7 +256,7 @@ class Model(nn.Module):
 
     def train(self,model,config):  #参数model用于将模型保存时用到，config 用于存储模型位置的时候用到
 
-        logging_name = config.model_name + '_D:' + str(config.ntimestep) + '_D:1'
+        logging_name = config.model_name + '_D:' + str(config.ntimestep) + '_D:'+str(config.n_next)
         logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', filename='./log/' + logging_name + '.log',
                             level=logging.INFO)
 

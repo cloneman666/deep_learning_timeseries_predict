@@ -31,8 +31,8 @@ class Config(object):
         self.dataroot = './data/one_hot_甘.csv'
 
 
-        self.ntime_steps = 10  # 为时间窗口
-        self.n_next = 2  # 为往后预测的天数
+        self.ntime_steps = 30  # 为时间窗口
+        self.n_next = 7  # 为往后预测的天数
 
         self.save_model = './data/check_point/best_CNN_LSTM_model_air_T:' + str(self.ntime_steps) + 'D:' + str(self.n_next) + '.pth'
 
@@ -52,7 +52,7 @@ class Config(object):
 
         self.feature_size = 20
 
-        self.window_sizes = [3,4,5,6]
+        self.window_sizes = [4,5,6]
 
         self.max_text_len = 20
 

@@ -15,6 +15,7 @@ import time
 from sklearn.metrics import  mean_absolute_error,mean_squared_error
 import numpy as np
 import matplotlib.pyplot as plt
+import logging
 
 class Config(object):
     def __init__(self):
@@ -24,8 +25,8 @@ class Config(object):
 
         self.batch_size  = 128
 
-        self.ntime_steps = 10 #为时间窗口
-        self.n_next = 3       #为往后预测的天数
+        self.ntime_steps = 30 #为时间窗口
+        self.n_next = 7       #为往后预测的天数
 
         self.input_size = 20   #输入数据的维度
         self.hidden_dim = 128  #隐藏层的大小
@@ -34,9 +35,9 @@ class Config(object):
         self.epochs  = 2000
         self.lr = 0.001
 
-        self.require_improvement = 100
+        self.require_improvement = 200
 
-        self.save_model = './data/check_point/best_seq2seq_model_air_T:'+self.ntime_steps+'D:'+ self.n_next+'.pth'
+        self.save_model = './data/check_point/best_seq2seq_model_air_T:'+str(self.ntime_steps)+'D:'+ str(self.n_next)+'.pth'
 
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -113,6 +114,11 @@ class Seq2Seq(nn.Module):
 
     def train(self,model,config,dataloader):
         print('==>开始训练...')
+
+        logging_name = config.model_name + '_T:' + str(config.ntime_steps) + '_D:' + str(config.n_next)
+        logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', filename='./log/' + logging_name + '.log',
+                            level=logging.INFO)
+
         best_loss = float('inf')  # 记录最小的损失，，这里不好加一边训练一边保存的代码，无穷大量
         all_epoch = 0  # 记录进行了多少个epoch
         last_imporve = 0  # 记录上次校验集loss下降的batch数
@@ -162,6 +168,8 @@ class Seq2Seq(nn.Module):
                 msg = 'Epochs:{0:d}, Loss:{1:.5f}, MSE:{2:.5f}, RMSE:{3:.5f}, MAE:{4:.5f}, Time:{5} {6}'
 
                 print(msg.format(epoch,loss.item(), MSE,RMSE,MAE,time_dif, imporve))
+
+                logging.info(msg.format(epoch,loss.item(), MSE,RMSE,MAE,time_dif, imporve))
 
             all_epoch = all_epoch + 1
 
