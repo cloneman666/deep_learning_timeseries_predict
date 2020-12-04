@@ -9,7 +9,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import math
 
 class Config(object):
     def __init__(self):
@@ -18,8 +18,8 @@ class Config(object):
         self.dataroot = './data/one_hot_甘.csv'
 
 
-        self.ntime_steps = 10  # 为时间窗口
-        self.n_next = 2  # 为往后预测的天数
+        self.ntime_steps = 30  # 为时间窗口
+        self.n_next = 7  # 为往后预测的天数
 
         self.save_model = './data/check_point/best_CNN_LSTM_self_Att_model_air_T:' + str(self.ntime_steps) + 'D:' + str(self.n_next) + '.pth'
 
@@ -46,33 +46,9 @@ class Config(object):
 
         # self.num_class = 10
 
-class Attention(nn.Module):
-    def __init__(self,config):
-        super(Attention, self).__init__()
-        self.attn = nn.Linear(config.enc_hidden_dim + config.dec_hidden_dim ,config.dec_hidden_dim,bias=False)
-        self.v = nn.Linear(config.dec_hidden_dim,1,bias=False)
+        # https://www.cnblogs.com/cxq1126/p/13504437.html
 
-    def forward(self,s,enc_output):
-        # s = [batch_size, dec_hid_dim]
-        # enc_output = [batch_size,src_len, enc_hid_dim]
 
-        batch_size = enc_output.shape[0]
-        src_len = enc_output.shape[1]
-
-        # repeat decoder hidden state src_len times
-        # s = [batch_size, src_len, dec_hid_dim]
-        # enc_output = [batch_size, src_len, enc_hid_dim]
-        s = s.unsqueeze(1).repeat(1, src_len, 1)
-
-        # enc_output = enc_output.transpose(0, 1)
-
-        # energy = [batch_size, src_len, dec_hid_dim]
-        energy = torch.tanh(self.attn(torch.cat((s, enc_output), dim=2)))
-
-        # attention = [batch_size, src_len]
-        attention = self.v(energy).squeeze(2)
-
-        return F.softmax(attention, dim=1)
 
 class Model(nn.Module):
     def __init__(self,config):
@@ -92,7 +68,6 @@ class Model(nn.Module):
                 # nn.MaxPool1d(kernel_size=ts_len - kernel_size + 1))
             for kernel_size in config.window_sizes
         ])
-        # self.self_attention = Attention(config)
 
         self.lstm = nn.LSTM(
             input_size=config.hid_size,
@@ -103,6 +78,27 @@ class Model(nn.Module):
         self.fc = nn.Linear(in_features=config.hid_size*2,out_features=config.hid_size)
         self.fc2 = nn.Linear(in_features=config.hid_size,out_features=config.n_next)
         self.dropout = nn.Dropout(config.dropout)
+
+        # x: [batch, seq_len, hidden_dim*2]
+        # query : [batch, seq_len, hidden_dim * 2]
+        # 软注意力机制 (key=value=x)
+    def attention_net(self, x, query, mask=None):
+        d_k = query.size(-1)  # d_k为query的维度
+
+            # query:[batch, seq_len, hidden_dim*2], x.t:[batch, hidden_dim*2, seq_len]
+            #         print("query: ", query.shape, x.transpose(1, 2).shape)  # torch.Size([128, 38, 128]) torch.Size([128, 128, 38])
+            # 打分机制 scores: [batch, seq_len, seq_len]
+        scores = torch.matmul(query, x.transpose(1, 2)) / math.sqrt(d_k)
+            #         print("score: ", scores.shape)  # torch.Size([128, 38, 38])
+
+            # 对最后一个维度 归一化得分
+        alpha_n = F.softmax(scores, dim=-1)
+            #         print("alpha_n: ", alpha_n.shape)    # torch.Size([128, 38, 38])
+            # 对权重化的x求和
+            # [batch, seq_len, seq_len]·[batch,seq_len, hidden_dim*2] = [batch,seq_len,hidden_dim*2] -> [batch, hidden_dim*2]
+        context = torch.matmul(alpha_n, x).sum(1)
+
+        return context, alpha_n
 
     def forward(self, x):
         # batch_size x text_len x embedding_size  -> batch_size x embedding_size x text_len
@@ -121,7 +117,11 @@ class Model(nn.Module):
 
         output, (h_n, h_c) = self.lstm(output)
 
-        output = F.leaky_relu((self.fc(output[:, -1, :])))
+        query = self.dropout(output)
+
+        attn_output , alpha = self.attention_net(output,query)
+
+        output = F.leaky_relu((self.fc(attn_output)))
 
         output = F.leaky_relu(self.fc2(output))
         output = self.dropout(output)

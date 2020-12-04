@@ -44,53 +44,56 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
     for epoch in range(config.epochs):
 
         for i, train_data in enumerate(train_dataloader):
-            train_x, train_y = torch.as_tensor(train_data[0], dtype=torch.float32).to(config.device), torch.as_tensor(train_data[1],dtype=torch.float32).to(config.device)
-            # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
+            train_x, train_y = torch.as_tensor(train_data[0], dtype=torch.float32).to(
+                        config.device), torch.as_tensor(train_data[1], dtype=torch.float32).to(config.device)
+                    # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
             train_y = train_y.squeeze(2)  # 将最后的1去掉
 
             optimizer.zero_grad()
 
-            if config.model_name =='Seq2Seq+Att':  #训练的时候用于选择模型
-                output = model(train_x,train_y)
+            if config.model_name == 'Seq2Seq+Att':  # 训练的时候用于选择模型
+                output = model(train_x, train_y)
             else:
-                output= model(train_x)
+                output = model(train_x)
             loss = criterion(output, train_y)
             loss.backward()
             optimizer.step()
 
-        #一边训练一边可视化
-        # if epoch % 50 == 0:
-        #     y_train_pred ,Y1= draw_pic(model,config,on_train=True)
-        #     y_test_pred ,Y1= draw_pic(model,config,on_train=False)
-        #
-        #     plt.ion()
-        #     plt.figure()
-        #     plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
-        #     plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1),y_test_pred, label='Predicted - Test')
-        #
-        #     plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps),y_train_pred, label='Predicted - Train')
-        #
-        #     plt.legend()
-        #     plt.pause(1)
-        #     plt.close()
+                # 一边训练一边可视化
+                # if epoch % 50 == 0:
+                #     y_train_pred ,Y1= draw_pic(model,config,on_train=True)
+                #     y_test_pred ,Y1= draw_pic(model,config,on_train=False)
+                #
+                #     plt.ion()
+                #     plt.figure()
+                #     plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
+                #     plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1),y_test_pred, label='Predicted - Test')
+                #
+                #     plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps),y_train_pred, label='Predicted - Train')
+                #
+                #     plt.legend()
+                #     plt.pause(1)
+                #     plt.close()
 
         if all_epoch % 50 == 0:
             model.eval()
             with torch.no_grad():
-                for i , test_data in enumerate(test_dataloader):
-                    test_x, test_y = torch.as_tensor(test_data[0], dtype=torch.float32).to(config.device), torch.as_tensor(
-                        test_data[1],
-                        dtype=torch.float32).to(config.device)
-                    # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
+                for i, test_data in enumerate(test_dataloader):
+                    test_x, test_y = torch.as_tensor(test_data[0], dtype=torch.float32).to(
+                                config.device), torch.as_tensor(
+                                test_data[1],
+                                dtype=torch.float32).to(config.device)
+                            # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
                     test_y = test_y.squeeze(2)  # 将最后的1去掉
 
-                    if config.model_name=='Seq2Seq+Att':
-                        test_output = model(test_x,test_y)
+                    if config.model_name == 'Seq2Seq+Att':
+                        test_output = model(test_x, test_y)
                     else:
                         test_output = model(test_x)
 
-                    test_loss = criterion(test_output,test_y)
-                    test_MSE, test_RMSE, test_MAE = evaluation(test_y.cpu().numpy(), test_output.detach().cpu().numpy())
+                    test_loss = criterion(test_output, test_y)
+                    test_MSE, test_RMSE, test_MAE = evaluation(test_y.cpu().numpy(),
+                                                                       test_output.detach().cpu().numpy())
 
             if loss < best_loss:
                 best_loss = loss

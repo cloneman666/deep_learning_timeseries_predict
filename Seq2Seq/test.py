@@ -233,13 +233,14 @@ if __name__ == '__main__':
     if flag==True:
         print('====>该模型已经训练过！直接进行测试')
         train.test(model, config)
+        # train.draw_model_structure(model, config)  # 画出模型的结构
 
     else:
         train.train(model, config, train_dataloader,test_dataloader)
 
         train.test(model,config)
 
-    # # train.draw_model_structure(model,config)  #画出模型的结构
+        # train.draw_model_structure(model,config)  #画出模型的结构
 
 
 

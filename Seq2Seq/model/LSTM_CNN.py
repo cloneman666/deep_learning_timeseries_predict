@@ -19,8 +19,8 @@ class Config(object):
         self.batch_size = 128
         self.test_batch_size = 100
 
-        self.ntime_steps = 10  # 为时间窗口
-        self.n_next = 3  # 为往后预测的天数
+        self.ntime_steps = 30  # 为时间窗口
+        self.n_next = 7  # 为往后预测的天数
 
         self.input_size = 20  # 输入数据的维度
         self.hidden_dim = 128  # 隐藏层的大小
