@@ -80,10 +80,10 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
             with torch.no_grad():
                 for i, test_data in enumerate(test_dataloader):
                     test_x, test_y = torch.as_tensor(test_data[0], dtype=torch.float32).to(
-                                config.device), torch.as_tensor(
-                                test_data[1],
-                                dtype=torch.float32).to(config.device)
-                            # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
+                                        config.device), torch.as_tensor(
+                                        test_data[1],
+                                        dtype=torch.float32).to(config.device)
+                                    # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
                     test_y = test_y.squeeze(2)  # 将最后的1去掉
 
                     if config.model_name == 'Seq2Seq+Att':
@@ -121,7 +121,7 @@ def train(model,config,train_dataloader,test_dataloader): #此处可以加入测
         all_epoch = all_epoch + 1
 
         if all_epoch - last_imporve > config.require_improvement:
-            # 在验证集合上loss超过1000batch没有下降，结束训练
+                    # 在验证集合上loss超过1000batch没有下降，结束训练
             print('==>在校验数据集合上已经很长时间没有提升了，模型自动停止训练')
             writer.close()
             flag = True

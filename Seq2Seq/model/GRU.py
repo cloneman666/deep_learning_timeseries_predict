@@ -17,18 +17,18 @@ class Config(object):
         self.dataroot = './data/one_hot_甘.csv'
 
 
-        self.ntime_steps = 30  # 为时间窗口
-        self.n_next = 15  # 为往后预测的天数
+        self.ntime_steps = 10  # 为时间窗口
+        self.n_next = 1  # 为往后预测的天数
 
         self.save_model = './data/check_point/best_GRU_model_air_T:' + str(self.ntime_steps) + 'D:' + str(self.n_next) + '.pth'
 
         self.dropout = 0.1
 
-        self.epochs = 3000
+        self.epochs = 3000  #需要的数比较大
 
         self.lr = 0.001
 
-        self.require_improvement = 500  # 超过100轮训练没有提升就结束训练
+        self.require_improvement = 300  # 超过100轮训练没有提升就结束训练
 
         self.batch_size = 128
         self.test_batch_size = 100
