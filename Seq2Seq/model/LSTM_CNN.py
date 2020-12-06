@@ -23,7 +23,7 @@ class Config(object):
         self.n_next = 7  # 为往后预测的天数
 
         self.input_size = 20  # 输入数据的维度
-        self.hidden_dim = 128  # 隐藏层的大小
+        self.hidden_dim = 100  # 隐藏层的大小
 
         self.dropout = 0.1
         self.num_layers = 1
@@ -66,7 +66,7 @@ class Model(nn.Module):
         self.fc = nn.Linear(in_features=config.hidden_dim//2, out_features=config.n_next)
         self.dropout = nn.Dropout(config.dropout)
 
-        self.fc2 = nn.Linear(in_features=18,out_features=1)
+        self.fc2 = nn.Linear(in_features=78,out_features=1)
 
     def forward(self,inputs):
         outputs ,_= self.lstm(inputs)

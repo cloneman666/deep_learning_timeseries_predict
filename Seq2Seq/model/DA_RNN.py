@@ -85,10 +85,8 @@ class Encoder(nn.Module):
             X: input data
 
         """
-        X_tilde = Variable(X.data.new(
-            X.size(0), self.T - 1, self.input_size).zero_())
-        X_encoded = Variable(X.data.new(
-            X.size(0), self.T - 1, self.encoder_num_hidden).zero_())
+        X_tilde = Variable(X.data.new(X.size(0), self.T - 1, self.input_size).zero_())
+        X_encoded = Variable(X.data.new(X.size(0), self.T - 1, self.encoder_num_hidden).zero_())
 
         # Eq. 8, parameters not in nn.Linear but to be learnt
         # v_e = torch.nn.Parameter(data=torch.empty(
