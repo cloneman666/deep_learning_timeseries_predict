@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-# @Time    : 12/6/20 7:46 PM
+# @Time    : 12/7/20 3:32 PM
 # @Author  : Cloneman
 # @Email   : 1171836398@qq.com
-# @File    : DA_test.py
+# @File    : DA_test2.py
 # @Software: PyCharm
 
 import matplotlib.pyplot as plt
@@ -22,10 +22,9 @@ import time
 import utils
 import logging
 
-
 class Config(object):
     def __init__(self):
-        self.model_name = 'DA_test'
+        self.model_name = 'DA_RNN'
 
         self.dataroot = './data/one_hot_甘.csv'
 
@@ -40,7 +39,7 @@ class Config(object):
         self.ntimestep  = 30   #时间窗口，即为T
         self.n_next = 1  # 为往后预测的天数
 
-        self.save_model = './data/check_point/best_DA_test_air_T:'+str(self.ntimestep)+'_D:'+str(self.n_next)+'.pth'
+        self.save_model = './data/check_point/best_DA_RNN_air_T:'+str(self.ntimestep)+'_D:'+str(self.n_next)+'.pth'
 
         self.epochs  = 3000
 
@@ -71,67 +70,19 @@ class Encoder(nn.Module):
 
         # Construct Input Attention Mechanism via deterministic attention model
         # Eq. 8: W_e[h_{t-1}; s_{t-1}] + U_e * x^k
-        self.encoder_attn = nn.Linear(
-            in_features=2 * self.encoder_num_hidden + self.T - 1,
-            out_features=1
-        )
+        # self.encoder_attn = nn.Linear(
+        #     in_features=2 * self.encoder_num_hidden + self.T - 1,
+        #     out_features=1
+        # )
 
     def forward(self, X):
-        """forward.
-
-        Args:
-            X: input data
-
-        """
-        X_tilde = Variable(X.data.new(X.size(0), self.T - 1, self.input_size).zero_())
-        X_encoded = Variable(X.data.new(X.size(0), self.T - 1, self.encoder_num_hidden).zero_())
-
-        # Eq. 8, parameters not in nn.Linear but to be learnt
-        # v_e = torch.nn.Parameter(data=torch.empty(
-        #     self.input_size, self.T).uniform_(0, 1), requires_grad=True)
-        # U_e = torch.nn.Parameter(data=torch.empty(
-        #     self.T, self.T).uniform_(0, 1), requires_grad=True)
-
-        # h_n, s_n: initial states with dimention hidden_size
-        h_n = self._init_states(X)
-        s_n = self._init_states(X)
-
-        for t in range(self.T - 1):
-            # batch_size * input_size * (2 * hidden_size + T - 1)
-            x = torch.cat((h_n.repeat(self.input_size, 1, 1).permute(1, 0, 2),
-                           s_n.repeat(self.input_size, 1, 1).permute(1, 0, 2),
-                           X.permute(0, 2, 1)), dim=2)
-
-            x = self.encoder_attn(
-                x.view(-1, self.encoder_num_hidden * 2 + self.T - 1))
-
-
-            # get weights by softmax
-            alpha = F.softmax(x.view(-1, self.input_size),dim=-1)
-
-            # get new input for LSTM
-            x_tilde = torch.mul(alpha, X[:, t, :])
-
-            # Fix the warning about non-contiguous memory
-            # https://discuss.pytorch.org/t/dataparallel-issue-with-flatten-parameter/8282
-            self.encoder_lstm.flatten_parameters()
-
-            # encoder LSTM
-            _, final_state = self.encoder_lstm(
-                x_tilde.unsqueeze(0), (h_n, s_n))
-            h_n = final_state[0]
-            s_n = final_state[1]
-
-            X_tilde[:, t, :] = x_tilde
-            X_encoded[:, t, :] = h_n
-
+        X_encoded , X_tilde=self.encoder_lstm(X)
         return X_tilde, X_encoded
 
     def _init_states(self, X):
         """Initialize all 0 hidden states and cell states for encoder."""
         # https://pytorch.org/docs/master/nn.html?#lstm
         return Variable(X.data.new(1, X.size(0), self.encoder_num_hidden).zero_())
-
 
 
 class Decoder(nn.Module):
@@ -145,24 +96,60 @@ class Decoder(nn.Module):
         self.T = T
         self.n_next = n_next
 
-        self.lstm_layer = nn.LSTM(
-            input_size=self.encoder_num_hidden,
-            hidden_size=self.encoder_num_hidden+self.decoder_num_hidden,
-            num_layers=1,
-            batch_first=True
+        self.attn_layer = nn.Sequential(
+            nn.Linear(2 * decoder_num_hidden +
+                      encoder_num_hidden, encoder_num_hidden),
+            nn.Tanh(),
+            nn.Linear(encoder_num_hidden, 1)
         )
-        self.fc = nn.Linear(self.encoder_num_hidden+self.decoder_num_hidden, (self.encoder_num_hidden+self.decoder_num_hidden)//2)
-        self.fc_final = nn.Linear((self.encoder_num_hidden+self.decoder_num_hidden)//2, self.n_next)
+        self.lstm_layer = nn.LSTM(
+            input_size=1,
+            hidden_size=decoder_num_hidden
+        )
+        self.fc = nn.Linear(encoder_num_hidden + 1, 1)
+        self.fc_final = nn.Linear(decoder_num_hidden + encoder_num_hidden, self.n_next)
 
-        self.dropout = nn.Dropout(0.1)
+        self.fc.weight.data.normal_()
 
-    def forward(self, X_encoded):
+    def forward(self, X_encoded, y_prev):
         """forward."""
-        output,_ = self.lstm_layer(X_encoded)
-        output = F.leaky_relu(self.dropout(self.fc(output[:,-1,:])))
-        output = F.leaky_relu(self.dropout(self.fc_final(output)))
-        return output
+        d_n = self._init_states(X_encoded)
+        c_n = self._init_states(X_encoded)
 
+        for t in range(self.T - 1):
+
+            x = torch.cat((d_n.repeat(self.T - 1, 1, 1).permute(1, 0, 2),
+                           c_n.repeat(self.T - 1, 1, 1).permute(1, 0, 2),
+                           X_encoded), dim=2)
+
+            beta = F.softmax(self.attn_layer(x.view(-1, 2 * self.decoder_num_hidden + self.encoder_num_hidden)).view(-1, self.T - 1),dim=-1)
+
+            # Eqn. 14: compute context vector
+            # batch_size * encoder_hidden_size
+            context = torch.bmm(beta.unsqueeze(1), X_encoded)[:, 0, :]
+            if t < self.T - 1:
+                # Eqn. 15
+                # batch_size * 1
+                y_tilde = self.fc(torch.cat((context, y_prev[:, t].unsqueeze(1)), dim=1))
+
+                # Eqn. 16: LSTM
+                self.lstm_layer.flatten_parameters()
+
+                _, final_states = self.lstm_layer(y_tilde.unsqueeze(0), (d_n, c_n))
+
+                d_n = final_states[0]  # 1 * batch_size * decoder_num_hidden
+                c_n = final_states[1]  # 1 * batch_size * decoder_num_hidden
+
+        # Eqn. 22: final output
+        y_pred = self.fc_final(torch.cat((d_n[0], context), dim=1))
+
+        return y_pred
+
+    def _init_states(self, X):
+        """Initialize all 0 hidden states and cell states for encoder."""
+        # hidden state and cell state [num_layers*num_directions, batch_size, hidden_size]
+        # https://pytorch.org/docs/master/nn.html?#lstm
+        return Variable(X.data.new(1, X.size(0), self.decoder_num_hidden).zero_())
 
 
 class Model(nn.Module):
@@ -338,7 +325,7 @@ class Model(nn.Module):
 
         input_weighted, input_encoded = self.Encoder(Variable(torch.from_numpy(X).type(torch.FloatTensor).to(self.device)))
 
-        y_pred = self.Decoder(input_encoded)
+        y_pred = self.Decoder(input_encoded, Variable(torch.from_numpy(y_prev).type(torch.FloatTensor).to(self.device)))
 
         y_true = Variable(torch.from_numpy(y_gt).type(torch.FloatTensor).to(self.device))
 
@@ -381,7 +368,7 @@ class Model(nn.Module):
 
             _, input_encoded = self.Encoder(Variable(torch.from_numpy(X).type(torch.FloatTensor).to(self.device)))
 
-            y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded).cpu().data.numpy()[:, 0]
+            y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
 
             i += self.batch_size
 
@@ -395,7 +382,7 @@ class Model(nn.Module):
 
         plt.ioff()
         plt.figure(figsize=(10,3),dpi=300)
-        plt.title('DA_RNN_T:'+str(config.ntimestep)+'D:1')
+        plt.title('DA_test2_T:'+str(config.ntimestep)+'D:1')
         plt.plot(range(1, 1 + len(self.y)), self.y, label="Ground Truth")
 
         plt.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
@@ -403,7 +390,7 @@ class Model(nn.Module):
         plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),y_test_pred, label='Predicted - Test')
         plt.tight_layout()
         plt.legend(loc='upper left')
-        plt.savefig('./data/pic/DA_RNN_T:'+str(config.ntimestep)+'D:1.png')
+        plt.savefig('./data/pic/DA_test2_T:'+str(config.ntimestep)+'D:1.png')
         plt.show()
 
 

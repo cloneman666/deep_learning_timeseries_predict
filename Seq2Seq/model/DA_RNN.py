@@ -172,8 +172,7 @@ class Decoder(nn.Module):
                            c_n.repeat(self.T - 1, 1, 1).permute(1, 0, 2),
                            X_encoded), dim=2)
 
-            beta = F.softmax(self.attn_layer(
-                x.view(-1, 2 * self.decoder_num_hidden + self.encoder_num_hidden)).view(-1, self.T - 1),dim=-1)
+            beta = F.softmax(self.attn_layer(x.view(-1, 2 * self.decoder_num_hidden + self.encoder_num_hidden)).view(-1, self.T - 1),dim=-1)
 
             # Eqn. 14: compute context vector
             # batch_size * encoder_hidden_size
@@ -181,13 +180,12 @@ class Decoder(nn.Module):
             if t < self.T - 1:
                 # Eqn. 15
                 # batch_size * 1
-                y_tilde = self.fc(
-                    torch.cat((context, y_prev[:, t].unsqueeze(1)), dim=1))
+                y_tilde = self.fc(torch.cat((context, y_prev[:, t].unsqueeze(1)), dim=1))
 
                 # Eqn. 16: LSTM
                 self.lstm_layer.flatten_parameters()
-                _, final_states = self.lstm_layer(
-                    y_tilde.unsqueeze(0), (d_n, c_n))
+
+                _, final_states = self.lstm_layer(y_tilde.unsqueeze(0), (d_n, c_n))
 
                 d_n = final_states[0]  # 1 * batch_size * decoder_num_hidden
                 c_n = final_states[1]  # 1 * batch_size * decoder_num_hidden
@@ -375,13 +373,11 @@ class Model(nn.Module):
         self.encoder_optimizer.zero_grad()
         self.decoder_optimizer.zero_grad()
 
-        input_weighted, input_encoded = self.Encoder(
-            Variable(torch.from_numpy(X).type(torch.FloatTensor).to(self.device)))
-        y_pred = self.Decoder(input_encoded, Variable(
-            torch.from_numpy(y_prev).type(torch.FloatTensor).to(self.device)))
+        input_weighted, input_encoded = self.Encoder(Variable(torch.from_numpy(X).type(torch.FloatTensor).to(self.device)))
 
-        y_true = Variable(torch.from_numpy(
-            y_gt).type(torch.FloatTensor).to(self.device))
+        y_pred = self.Decoder(input_encoded, Variable(torch.from_numpy(y_prev).type(torch.FloatTensor).to(self.device)))
+
+        y_true = Variable(torch.from_numpy(y_gt).type(torch.FloatTensor).to(self.device))
 
         y_true = y_true.view(-1, 1)
         loss = self.criterion(y_pred, y_true)

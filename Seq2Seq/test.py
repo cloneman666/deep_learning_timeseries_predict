@@ -16,7 +16,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq类模型进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='DA_RNN',help='choose a model CNN,LSTM,GRU,Seq2Seq,CNN_LSTM+self_Att,Seq2Seq+Att,DA_RNN,CNN_LSTM,CNN_GRU')
+    parser.add_argument('--model_name',type=str,default='DA_test2',help='choose a model CNN,LSTM,GRU,Seq2Seq,CNN_LSTM+self_Att,Seq2Seq+Att,DA_RNN,CNN_LSTM,CNN_GRU')
 
     args = parser.parse_args()
 
@@ -68,6 +68,54 @@ def main_DA_RNN():
     plt.savefig("./data/pic/3.png")
     plt.close(fig3)
     print('Finished Training')
+
+def main_DA_test():
+    """
+        该函数为训练Seq2Seq_Att模型的函数
+        :return:
+        """
+    args = parse_args()  # 加载所选模型的名字
+    model_name = args.model_name
+    x = import_module('model.' + model_name)
+    config = x.Config()
+
+    # Read dataset
+    print("==> Load dataset ...")
+    X, y = read_data(config.dataroot, debug=False)
+
+    # Initialize model
+    print("==> Initialize DA_test model ...")
+    model = x.Model(
+        X,
+        y,
+        config
+    )
+
+    # Train
+    print("==> Start training ...")
+    model.train(model, config)  # model 输入进去用于保存模型
+
+    # Prediction
+    y_pred = model.test()
+
+    fig1 = plt.figure()
+    plt.semilogy(range(len(model.iter_losses)), model.iter_losses)
+    plt.savefig("./data/pic/1_test.png")
+    plt.close(fig1)
+
+    fig2 = plt.figure()
+    plt.semilogy(range(len(model.epoch_losses)), model.epoch_losses)
+    plt.savefig("./data/pic/2_test.png")
+    plt.close(fig2)
+
+    fig3 = plt.figure()
+    plt.plot(y_pred, label='Predicted')
+    plt.plot(model.y[model.train_timesteps:], label="True")
+    plt.legend(loc='upper left')
+    plt.savefig("./data/pic/3_test.png")
+    plt.close(fig3)
+    print('Finished Training')
+
 
 def run_DA_RNN_model():
     """
@@ -190,8 +238,9 @@ if __name__ == '__main__':
     # GBRT()   #渐进递归回归树（Gradient Boosting Regression）
 
 
-    main_DA_RNN()
-    # run_DA_RNN_model()
+    # main_DA_RNN()
+    # main_DA_test()
+    run_DA_RNN_model()
     # main_Seq2Seq()
     #
     # run_Seq2Seq_model()  #有问题
@@ -239,8 +288,8 @@ if __name__ == '__main__':
     #     train.train(model, config, train_dataloader,test_dataloader)
     #
     #     train.test(model,config)
-    #
-    #     # train.draw_model_structure(model,config)  #画出模型的结构
+    # #
+    # #     # train.draw_model_structure(model,config)  #画出模型的结构
 
 
 
