@@ -174,8 +174,7 @@ def draw_pic(model,config,on_train=True):
         # train_y = train_y.squeeze(2)  # 将最后的1去掉
 
         if config.model_name=='Seq2Seq+Att':
-            y_pred[i:(i + config.batch_size)] = model(
-                torch.as_tensor(X, dtype=torch.float32).to(config.device),torch.as_tensor(y_history,dtype=torch.float32).to(config.device)).detach().cpu().numpy()[:, 0]
+            y_pred[i:(i+config.batch_size)] = model(torch.as_tensor(X, dtype=torch.float32).to(config.device),torch.as_tensor(y_history,dtype=torch.float32).to(config.device)).detach().cpu().numpy()[:, 0]
         else:
             y_pred[i:(i+config.batch_size)] = model(torch.as_tensor(X, dtype=torch.float32).to(config.device)).detach().cpu().numpy()[:,0]
 
@@ -191,6 +190,7 @@ def draw_pic(model,config,on_train=True):
 def test(model,config):
     print("*"*100)
     print("==>加载已训练好的模型...")
+
     model.load_state_dict(torch.load(config.save_model,map_location=torch.device(config.device)))
 
     y_train_pred, Y1 = draw_pic(model, config, on_train=True)
