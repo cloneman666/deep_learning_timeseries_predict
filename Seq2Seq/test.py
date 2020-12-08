@@ -9,6 +9,7 @@ import utils   #这个为计算时间的方法，为公共方法，所以定义�
 from model.Random_Forest import *
 from model.ARIMA import *
 from model.GBRT import *
+import torch
 
 def parse_args():
     """Parse arguments."""
@@ -16,7 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq类模型进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='Seq2Seq+Att',help='choose a model CNN,LSTM,GRU,Seq2Seq,CNN_LSTM+self_Att,Seq2Seq+Att,DA_RNN,CNN_LSTM,CNN_GRU')
+    parser.add_argument('--model_name',type=str,default='MyDA',help='choose a model CNN,LSTM,GRU,Seq2Seq,CNN_LSTM+self_Att,Seq2Seq+Att,DA_RNN,CNN_LSTM,CNN_GRU')
 
     args = parser.parse_args()
 
@@ -130,6 +131,7 @@ def run_DA_RNN_model():
     config = x.Config()
 
     print('==>加载数据...')
+
     X, y = read_data(config.dataroot, debug=False)
     print('==>运行已经跑好的模型:',model_name)
     model = x.Model(
@@ -138,7 +140,7 @@ def run_DA_RNN_model():
         config
     )
 
-    model.load_state_dict(torch.load(config.save_model))
+    model.load_state_dict(torch.load(config.save_model,map_location=torch.device(config.device)))
     print('==>模型加载成功！')
     model.test_model(config)
 
@@ -230,7 +232,43 @@ def GBRT():
     train_GBRT(train_x, train_y, test_x, test_y, y)
 
 
+def MyDA():
+    np.random.seed(1)
+    torch.manual_seed(1)
+    torch.cuda.manual_seed_all(1)
+    torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
+    #
+    args = parse_args()  # 加载所选模型的名字
+    model_name = args.model_name
+    x = import_module('model.' + model_name)
+    config = x.Config()
+
+    model = x.Model(config)
+    model = model.to(config.device)
+
+    print('==>当前使用的模型为：' + model_name + '_T：' + str(config.ntime_steps) + '_D:' + str(config.n_next))
+
+    print('==>加载数据中...')
+
+    Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
+
+    # ntime_steps   为时间窗口T
+    # n_next        为想要预测的天数
+    train_data = MyDataset(Train_X, Train_Y)
+
+    test_data = MyDataset(Test_X, Test_Y)
+
+    train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
+
+    test_dataloader = DataLoader(dataset=test_data, batch_size=config.test_batch_size)
+
+    model.train(model,config,train_dataloader,test_dataloader)
+
 if __name__ == '__main__':
+
+
+    MyDA()
+
 
     # RF()  #随机森林
     # ARIMA()  #移动平均算法
@@ -248,47 +286,47 @@ if __name__ == '__main__':
 #############################################################
       # CNN_LSTM   CNN_GRU
 
-    np.random.seed(1)
-    torch.manual_seed(1)
-    torch.cuda.manual_seed_all(1)
-    torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
+    # np.random.seed(1)
+    # torch.manual_seed(1)
+    # torch.cuda.manual_seed_all(1)
+    # torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
+    # #
+    # args = parse_args()  # 加载所选模型的名字
+    # model_name = args.model_name
+    # x = import_module('model.' + model_name)
+    # config = x.Config()
     #
-    args = parse_args()  # 加载所选模型的名字
-    model_name = args.model_name
-    x = import_module('model.' + model_name)
-    config = x.Config()
-
-    model = x.Model(config)
-    model = model.to(config.device)
-
-    print('==>当前使用的模型为：' + model_name +'_T：'+str(config.ntime_steps) + '_D:'+ str(config.n_next))
-
-    print('==>加载数据中...')
-
-    Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
-
-    # ntime_steps   为时间窗口T
-    # n_next        为想要预测的天数
-    train_data = MyDataset(Train_X,Train_Y)
-
-    test_data = MyDataset(Test_X,Test_Y)
-
-
-    train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
-
-    test_dataloader = DataLoader(dataset=test_data,batch_size=config.test_batch_size)
-
-    flag = os.path.exists(config.save_model)
-    if flag==True:
-        print('====>该模型已经训练过！直接进行测试')
-        train.test(model, config)
-        # train.draw_model_structure(model, config)  # 画出模型的结构
-
-    else:
-        train.train(model, config, train_dataloader,test_dataloader)
-
-        train.test(model,config)
+    # model = x.Model(config)
+    # model = model.to(config.device)
     #
+    # print('==>当前使用的模型为：' + model_name +'_T：'+str(config.ntime_steps) + '_D:'+ str(config.n_next))
+    #
+    # print('==>加载数据中...')
+    #
+    # Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
+    #
+    # # ntime_steps   为时间窗口T
+    # # n_next        为想要预测的天数
+    # train_data = MyDataset(Train_X,Train_Y)
+    #
+    # test_data = MyDataset(Test_X,Test_Y)
+    #
+    #
+    # train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
+    #
+    # test_dataloader = DataLoader(dataset=test_data,batch_size=config.test_batch_size)
+    #
+    # flag = os.path.exists(config.save_model)
+    # if flag==True:
+    #     print('====>该模型已经训练过！直接进行测试')
+    #     train.test(model, config)
+    #     # train.draw_model_structure(model, config)  # 画出模型的结构
+    #
+    # else:
+    #     train.train(model, config, train_dataloader,test_dataloader)
+
+        # train.test(model,config)
+
     # #     # train.draw_model_structure(model,config)  #画出模型的结构
 
 

@@ -50,6 +50,8 @@ class Config(object):
 
         self.require_improvement = 200   #超过100轮训练没有提升就结束训练
 
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 class Encoder(nn.Module):
     """encoder in Seq2Seq_Att."""
 
