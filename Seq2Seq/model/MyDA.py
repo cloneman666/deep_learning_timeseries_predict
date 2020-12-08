@@ -31,8 +31,8 @@ class Config(object):
 
         self.nhidden_decoder  = 128
 
-        self.ntime_steps  = 30   #时间窗口，即为T
-        self.n_next = 3  # 为往后预测的天数
+        self.ntime_steps  = 10   #时间窗口，即为T
+        self.n_next = 1  # 为往后预测的天数
 
         self.save_model = './data/check_point/best_MyDA_air_T:'+str(self.ntime_steps)+'_D:'+str(self.n_next)+'.pth'
 
@@ -240,7 +240,6 @@ class Model(nn.Module):
     def train(self,model,config,train_dataloader,test_dataloader):
 
         best_loss = float('inf')  # 记录最小的损失，，这里不好加一边训练一边保存的代码，无穷大量
-        all_epoch = 0  # 记录进行了多少个epoch
         last_imporve = 0  # 记录上次校验集loss下降的batch数
         flag = False  # 记录是否很久没有效果提升，停止训练
         start_time = time.time()
@@ -257,18 +256,18 @@ class Model(nn.Module):
                 y_pred, y_true, loss = self.train_forward(train_x,y_prev,train_y)
 
             if epoch % 10 == 0:
-                y_train_pred = self.draw_pic(model,config,on_train=True)
-                y_test_pred = self.test(on_train=False)
-                y_pred = np.concatenate((y_train_pred, y_test_pred))
+                y_train_pred ,Y1= self.draw_pic(config,on_train=True)
+                # y_test_pred,Y1 = self.draw_pic(config,on_train=False)
+                # y_predhh = np.concatenate((y_train_pred, y_test_pred))
                 plt.ion()
                 plt.figure()
-                plt.plot(range(1, 1 + len(self.y)), self.y, label="Ground Truth")
-                plt.plot(range(self.T, len(y_train_pred) + self.T),
-                         y_train_pred, label='Predicted - Train')
-                plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),
-                         y_test_pred, label='Predicted - Test')
-                plt.legend(loc='upper left')
+                plt.plot(range(1, 1 + len(Y1)), Y1, label="Ground Truth")
 
+                plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps),y_train_pred, label='Predicted - Train')
+
+                # plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1),y_test_pred, label='Predicted - Test')
+
+                plt.legend(loc='upper left')
                 plt.pause(2)
                 plt.close()
                 # plt.draw()
@@ -284,12 +283,8 @@ class Model(nn.Module):
                     imporve = " "
                 time_dif = utils.get_time_dif(start_time)
 
-
-
                 MSE, RMSE, MAE = evaluation(y_pred.detach().cpu().numpy(), y_true.cpu().numpy())
-
                 msg = 'Epochs:{0:d},Loss:{1:.5f}, MSE:{2:.5f}, RMSE:{3:.5f}, MAE:{4:.5f}, Time:{5} {6}'
-
                 print(msg.format(epoch, loss, MSE, RMSE, MAE, time_dif, imporve))
 
             if epoch - last_imporve > config.require_improvement:
@@ -301,7 +296,7 @@ class Model(nn.Module):
             if flag:
                 break
 
-    def draw_pic(model, config, on_train=True):
+    def draw_pic(self,config,on_train=True):
         """
         此函数为画图函数，将每步的图像进行可视化
         """
@@ -316,45 +311,37 @@ class Model(nn.Module):
         else:
             y_pred = np.zeros(X1.shape[0] - train_timesteps)
 
-        i = 0
-        while i < len(y_pred):
-            batch_idx = np.array(range(len(y_pred)))[i: (i + config.batch_size)]
-            X = np.zeros((len(batch_idx), config.ntime_steps - 1, X1.shape[1]))
-            y_history = np.zeros((len(batch_idx), config.ntime_steps - 1))
+        Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
 
-            for j in range(len(batch_idx)):
-                if on_train:
+        # ntime_steps   为时间窗口T
+        # n_next        为想要预测的天数
+        train_data = MyDataset(Train_X, Train_Y)
 
-                    X[j, :, :] = X1[range(batch_idx[j], batch_idx[j] + config.ntime_steps - 1), :]
+        test_data = MyDataset(Test_X, Test_Y)
 
-                    y_history[j, :] = Y1[range(batch_idx[j], batch_idx[j] + config.ntime_steps - 1)]
+        train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
 
-                else:
-                    X[j, :, :] = X1[range(batch_idx[j] + train_timesteps - config.ntime_steps,
-                                          batch_idx[j] + train_timesteps - 1), :]
+        # test_dataloader = DataLoader(dataset=test_data, batch_size=config.test_batch_size)
+        temp = 0
+        for i, train_data in enumerate(train_dataloader):
+            train_x, train_y = torch.as_tensor(train_data[0], dtype=torch.float32).to(
+                config.device), torch.as_tensor(train_data[1], dtype=torch.float32).to(config.device)
 
-                    y_history[j, :] = Y1[
-                        range(batch_idx[j] + train_timesteps - config.ntime_steps, batch_idx[j] + train_timesteps - 1)]
+            train_y = train_y.squeeze(2)  # 将最后的1去掉
 
-            # 这里用不到
-            # y_history = torch.from_numpy(y_history).type(torch.FloatTensor).to(config.device)
+            y_prev = np.zeros((train_x.size(0), config.ntime_steps - 1))  # batch_size  要能整除
 
-            # train_x, train_y = torch.as_tensor(train_data[0], dtype=torch.float32), torch.as_tensor(train_data[1],
-            #                                                                                         dtype=torch.float32)
-            # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
-            # train_y = train_y.squeeze(2)  # 将最后的1去掉
+            _, input_encoded = self.Encoder(train_x.to(self.device))
 
-            
+            y_predhh = self.Decoder(input_encoded,
+                                  Variable(torch.from_numpy(y_prev).type(torch.FloatTensor).to(self.device)))
 
-            y_pred[i:(i + config.batch_size)] = model(
-                    torch.as_tensor(X, dtype=torch.float32).to(config.device)).detach().cpu().numpy()[:, 0]
+            y_pred[temp:(temp + train_x.size(0))] = y_predhh.cpu().data.numpy()[:, 0]
 
-            # _, input_encoded = self.Encoder((torch.from_numpy(X).type(torch.FloatTensor).to(config.device)))
-            #
-            # y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
-            i += config.batch_size
-
-        return y_pred
+            # i += config.batch_size
+            # i += train_x.size(0)
+            temp += train_x.size(0)
+        return y_pred,Y1
 
 
 
