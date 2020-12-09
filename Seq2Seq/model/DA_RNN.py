@@ -7,16 +7,11 @@
 # @Software: PyCharm
 
 # 此模型主要为预测金融时间序列预测提出的，加入了注意力机制
-
-
 import matplotlib.pyplot as plt
-
 import torch
 import numpy as np
-
 from torch import nn
 from torch import optim
-
 from torch.autograd import Variable
 import torch.nn.functional as F
 from tqdm import tqdm
@@ -203,7 +198,6 @@ class Decoder(nn.Module):
         # https://pytorch.org/docs/master/nn.html?#lstm
         return Variable(X.data.new(1, X.size(0), self.decoder_num_hidden).zero_())
 
-
 class Model(nn.Module):
     """ Seq2Seq_Att Recurrent Neural Network."""
 
@@ -324,12 +318,10 @@ class Model(nn.Module):
                 plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),
                          y_test_pred, label='Predicted - Test')
                 plt.legend(loc='upper left')
-
                 plt.pause(2)
                 plt.close()
                 # plt.draw()
                 # plt.show()
-
 
             if all_epoch % 10 == 0:
                 if loss < best_loss:
@@ -438,7 +430,6 @@ class Model(nn.Module):
         plt.plot(range(1, 1 + len(self.y)), self.y, label="Ground Truth")
 
         plt.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
-
         plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),y_test_pred, label='Predicted - Test')
         plt.tight_layout()
         plt.legend(loc='upper left')

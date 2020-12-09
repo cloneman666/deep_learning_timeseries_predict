@@ -117,7 +117,6 @@ def main_DA_test():
     plt.close(fig3)
     print('Finished Training')
 
-
 def run_DA_RNN_model():
     """
 
@@ -263,6 +262,8 @@ def MyDA():
     test_dataloader = DataLoader(dataset=test_data, batch_size=config.test_batch_size)
 
     model.train(model,config,train_dataloader,test_dataloader)
+
+    model.test(model, config)
 
 if __name__ == '__main__':
 
