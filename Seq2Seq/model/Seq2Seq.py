@@ -26,7 +26,7 @@ class Config(object):
         self.batch_size  = 128
 
         self.ntime_steps = 30 #为时间窗口
-        self.n_next = 7       #为往后预测的天数
+        self.n_next = 3       #为往后预测的天数
 
         self.input_size = 20   #输入数据的维度
         self.hidden_dim = 128  #隐藏层的大小
@@ -37,7 +37,7 @@ class Config(object):
 
         self.require_improvement = 200
 
-        self.save_model = './data/check_point/best_seq2seq_model_air_T:'+str(self.ntime_steps)+'D:'+ str(self.n_next)+'.pth'
+        self.save_model = './data/check_point/best_seq2seq_model_air_T:'+str(self.ntime_steps)+'_D:'+ str(self.n_next)+'.pth'
 
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -52,12 +52,11 @@ class Encoder(nn.Module):
         self.hidden_dim = config.hidden_dim
         self.num_layers = config.num_layers
 
-        self.lstm = nn.LSTM(self.input_size, self.hidden_dim, num_layers=self.num_layers)
+        self.lstm = nn.LSTM(self.input_size, self.hidden_dim, num_layers=self.num_layers,batch_first=True)
         self.hidden = None
 
     def init_hidden(self, batch_size,config):
         return torch.zeros(self.num_layers,batch_size,self.hidden_dim).clone().detach().to(config.device),torch.zeros(self.num_layers,batch_size,self.hidden_dim).clone().detach().to(config.device)
-
 
     def forward(self, inputs):
         # Push through RNN layer (the ouput is irrelevant)
@@ -131,14 +130,14 @@ class Seq2Seq(nn.Module):
             for i,train_data in enumerate(dataloader):
 
                 train_x ,train_y= torch.as_tensor(train_data[0],dtype=torch.float32).to(config.device),torch.as_tensor(train_data[1],dtype=torch.float32).to(config.device)
-                train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
+                # train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
                 train_y = train_y.squeeze(2)   #将最后的1去掉
 
                 self.encoder_optimizer.zero_grad()
                 self.decoder_optimizer.zero_grad()
 
                 # Reset hidden state of encoder for current batch
-                self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1],config)
+                self.encoder.hidden = self.encoder.init_hidden(train_x.shape[0],config)
 
                 # Do forward pass through encoder
                 hidden = self.encoder(train_x)
@@ -150,13 +149,15 @@ class Seq2Seq(nn.Module):
                 self.encoder_optimizer.step()
                 self.decoder_optimizer.step()
 
-            # self.test(train_x.cpu(), train_y.cpu(),epoch,config,model)   # 可视化训练中的实际情况
+
             # self.test(epoch,config,model)
 
             if all_epoch % 10 == 0:
+                self.test_model(config)  # 可视化训练中的实际情况
                 if loss < best_loss:
                     best_loss = loss
-                    torch.save(model.state_dict(), config.save_model)
+                    # torch.save(model.state_dict(), config.save_model)  #只保存模型的参数
+                    torch.save(model,config.save_model)  #保存整个模型
                     imporve = "*"
                     last_imporve = all_epoch
                 else:
@@ -182,126 +183,96 @@ class Seq2Seq(nn.Module):
             if flag:
                 break
 
-
-        # 该函数没有成功
-    def test_model(self):
+    def test_model(self,config):
         # 加载全部数据进行测试
-        data_x = read_all_data('./data/one_hot_甘.csv').drop('y',axis=1)
+        # print("*" * 100)
+        # print("==>加载已训练好的模型...")
 
-        # print(data_x.info())
+        # model.load_state_dict(torch.load(config.save_model, map_location=torch.device(config.device)))
 
-        data_y = read_all_data('./data/one_hot_甘.csv')['y']
+        # model = torch.load(config.save_model)
 
-        # print(data_x.values)
-        # print(data_y.head())
-
-        train_x, train_y = torch.as_tensor(data_x.values, dtype=torch.float32), torch.as_tensor(data_y.values,dtype=torch.float32)
-        train_x = train_x.unsqueeze(0)
-        train_x = train_x.transpose(1,0)  # Convert (batch_size, seq_len, input_size) to (seq_len, batch_size, input_size)
-        train_y = train_y.unsqueeze(1)  #
-
-        self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1])  #train_x.shape[1]
-        # Do forward pass through encoder
-        hidden = self.encoder(train_x)
-        # Do forward pass through decoder (decoder gets hidden state from encoder)
-        output, loss = self.decoder(train_y, hidden, self.criterion)
+        y_train_pred, Y1 = self.draw_pic(config, on_train=True)
+        y_test_pred, Y1 = self.draw_pic(config, on_train=False)
 
         plt.ion()
-        plt.figure()
-        plt.plot(range(1, 1 + len(train_y)), train_y, label="True")
-        plt.plot(range(1, 1 + len(output.detach().numpy())), output.detach().numpy(), label="Test")
+
+        plt.figure(figsize=(10, 3), dpi=300)
+        plt.title(config.model_name + '_T:' + str(config.ntime_steps) + '_D:' + str(config.n_next))
+        plt.plot(range(1, 1 + len(Y1)), Y1, label='Ground Truth')
+        plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1), y_test_pred, label='Predicted - Test')
+
+        plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps), y_train_pred,
+                 label='Predicted - Train')
+        plt.tight_layout()
         plt.legend()
-        plt.pause(1)
-        plt.close()
-
-    #这个函数为边训练边测试的函数
-    def test(self,epoch,config,model):
-        # with torch.no_grad():
-            # self.encoder.hidden = self.encoder.init_hidden(train_x.shape[1],config)
-            #         # Do forward pass through encoder
-            # train_x = train_x.to(config.device)
-            # hidden = self.encoder(train_x)
-            #         # Do forward pass through decoder (decoder gets hidden state from encoder)
-            # output, loss = self.decoder(train_y.to(config.device), hidden, self.criterion,config)
-
-        if epoch % 10 == 0:
-
-            y_train_pred, Y1 = draw_pic(config, on_train=True)
-            y_test_pred, Y1 = draw_pic(config, on_train=False)
-
-            plt.ion()
-            plt.figure()
-            plt.plot(range(1, 1 + len(Y1)), Y1, label='True')
-            plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1), y_test_pred,label='Predicted - Test')
-
-            plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps), y_train_pred,label='Predicted - Train')
-
-            plt.legend()
-            plt.pause(1)
-            plt.close()
-
-def draw_pic(config,on_train=True):
-    """
-    此函数为画图函数，将每步的图像进行可视化
-    """
-    encoder = Encoder(config).to(config.device)
-    decoder = Decoder(config).to(config.device)
-
-    criterion = nn.MSELoss()
-
-    # Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
-
-    X1,Y1 = read_data(config.dataroot)
-    train_timesteps = int(X1.shape[0] * 0.8)
-
-    if on_train:
-        y_pred = np.zeros(train_timesteps - config.ntime_steps + 1)
-    else:
-        y_pred = np.zeros(X1.shape[0] - train_timesteps)
-
-    i = 0
-    while i < len(y_pred):
-        batch_idx = np.array(range(len(y_pred)))[i: (i + config.batch_size)]
-        X = np.zeros((len(batch_idx), config.ntime_steps - 1, X1.shape[1]))
-        y_history = np.zeros((len(batch_idx), config.ntime_steps - 1))
-
-        for j in range(len(batch_idx)):
-            if on_train:
-
-                X[j, :, :] = X1[range(batch_idx[j], batch_idx[j] + config.ntime_steps - 1), :]
-
-                y_history[j, :] = Y1[range(batch_idx[j], batch_idx[j] + config.ntime_steps - 1)]
-
-            else:
-                X[j, :, :] = X1[range(batch_idx[j] + train_timesteps - config.ntime_steps, batch_idx[j] + train_timesteps - 1), :]
-
-                y_history[j, :] = Y1[range(batch_idx[j] + train_timesteps - config.ntime_steps, batch_idx[j] + train_timesteps - 1)]
-
-        #这里用不到
-        y_history = torch.from_numpy(y_history).type(torch.FloatTensor).to(config.device)
-
-        # Reset hidden state of encoder for current batch
-        encoder.hidden = encoder.init_hidden(X.shape[1], config)
-
-        # Do forward pass through encoder
-        hidden = encoder(torch.tensor(X, dtype=torch.float32).to(config.device))
-        # Do forward pass through decoder (decoder gets hidden state from encoder)
-        # hidden[0] = hidden[0].permute(0,2,1)
-        # hidden[1] = hidden[1].permute(0,2,1)
-
-        output, loss = decoder(y_history, hidden, criterion, config)
-
-        y_pred[i:(i + config.batch_size)] = output.detach().cpu().numpy()[:,0]
+        # plt.pause(1)
+        # plt.close()
+        plt.savefig(
+            './data/pic/' + config.model_name + '_T:' + str(config.ntime_steps) + '_D:' + str(config.n_next) + '.png')
+        plt.show()
 
 
-        # y_pred[i:(i+config.batch_size)] = model(torch.tensor(X, dtype=torch.float32)).detach().cpu().numpy()[:,0]
-
-        # _, input_encoded = self.Encoder((torch.from_numpy(X).type(torch.FloatTensor).to(config.device)))
+    def draw_pic(self,config,on_train=True):
+        # encoder = Encoder(config).to(config.device)
+        # decoder = Decoder(config).to(config.device)
         #
-        # y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
-        i += config.batch_size
+        # criterion = nn.MSELoss()
 
-    return y_pred,Y1
+                # Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
+
+        X1,Y1 = read_data(config.dataroot)
+        train_timesteps = int(X1.shape[0] * 0.8)
+
+        if on_train:
+            y_pred = np.zeros(train_timesteps - config.ntime_steps + 1)
+        else:
+            y_pred = np.zeros(X1.shape[0] - train_timesteps)
+
+        i = 0
+        while i < len(y_pred):
+            batch_idx = np.array(range(len(y_pred)))[i: (i + config.batch_size)]
+            X = np.zeros((len(batch_idx), config.ntime_steps - 1, X1.shape[1]))
+            y_history = np.zeros((len(batch_idx), config.ntime_steps - 1))
+
+            for j in range(len(batch_idx)):
+                if on_train:
+
+                    X[j, :, :] = X1[range(batch_idx[j], batch_idx[j] + config.ntime_steps - 1), :]
+
+                    y_history[j, :] = Y1[range(batch_idx[j], batch_idx[j] + config.ntime_steps - 1)]
+
+                else:
+                    X[j, :, :] = X1[range(batch_idx[j] + train_timesteps - config.ntime_steps, batch_idx[j] + train_timesteps - 1), :]
+
+                    y_history[j, :] = Y1[range(batch_idx[j] + train_timesteps - config.ntime_steps, batch_idx[j] + train_timesteps - 1)]
+
+                    #################这里用不到#############
+            y_history = torch.from_numpy(y_history).type(torch.FloatTensor).to(config.device)
+
+                    # Reset hidden state of encoder for current batch
+            self.encoder.hidden = self.encoder.init_hidden(X.shape[0], config)
+
+                    # Do forward pass through encoder
+            hidden = self.encoder(torch.tensor(X, dtype=torch.float32).to(config.device))
+                    # Do forward pass through decoder (decoder gets hidden state from encoder)
+                    # hidden[0] = hidden[0].permute(0,2,1)
+                    # hidden[1] = hidden[1].permute(0,2,1)
+
+            output, loss = self.decoder(y_history, hidden, self.criterion, config)
+                    #########################
+            # output = model(torch.tensor(X, dtype=torch.float32).to(config.device))
+            y_pred[i:(i + config.batch_size)] = output.detach().cpu().numpy()[:,0]
+
+
+                    # y_pred[i:(i+config.batch_size)] = model(torch.tensor(X, dtype=torch.float32)).detach().cpu().numpy()[:,0]
+
+                    # _, input_encoded = self.Encoder((torch.from_numpy(X).type(torch.FloatTensor).to(config.device)))
+                    #
+                    # y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
+            i += config.batch_size
+
+        return y_pred,Y1
 
 def evaluation(y_true, y_pred):
     """

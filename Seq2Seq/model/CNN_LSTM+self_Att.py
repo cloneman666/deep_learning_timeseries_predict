@@ -19,7 +19,7 @@ class Config(object):
 
 
         self.ntime_steps = 30  # 为时间窗口
-        self.n_next = 7  # 为往后预测的天数
+        self.n_next = 20  # 为往后预测的天数
 
         self.save_model = './data/check_point/best_CNN_LSTM_self_Att_model_air_T:' + str(self.ntime_steps) + 'D:' + str(self.n_next) + '.pth'
 

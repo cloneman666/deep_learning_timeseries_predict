@@ -19,8 +19,8 @@ class Config(object):
         self.dataroot = './data/one_hot_甘.csv'
 
 
-        self.ntime_steps = 10  # 为时间窗口
-        self.n_next = 1  # 为往后预测的天数
+        self.ntime_steps = 30  # 为时间窗口
+        self.n_next = 3  # 为往后预测的天数
 
         self.save_model = './data/check_point/best_GRU_model_air_T:' + str(self.ntime_steps) + 'D:' + str(self.n_next) + '.pth'
 

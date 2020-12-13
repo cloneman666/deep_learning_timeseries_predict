@@ -36,8 +36,9 @@ def read_data(input_path, debug=False):
 #自定义方法，除去部分内容
 def read_all_data(input_path):
     df = pd.read_csv(input_path)
-    df = df.drop(['ds','Cls_Cd_Y','start_time'],axis=1)
+    # df = df.drop(['ds','Cls_Cd_Y','start_time'],axis=1)
     # print(df.info())
+    df['ds'] = pd.to_datetime(df['ds'])
     return df
 
 

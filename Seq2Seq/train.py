@@ -138,6 +138,7 @@ def draw_pic(model,config,on_train=True):
 
 
     # Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
+    pic_data = read_all_data(config.dataroot)
 
     X1,Y1 = read_data(config.dataroot)
     train_timesteps = int(X1.shape[0] * 0.8)
@@ -185,7 +186,7 @@ def draw_pic(model,config,on_train=True):
         # y_pred[i:(i + self.batch_size)] = self.Decoder(input_encoded,y_history).cpu().data.numpy()[:, 0]
         i += config.batch_size
 
-    return y_pred,Y1
+    return y_pred,Y1,pic_data
 
 def test(model,config):
     print("*"*100)
@@ -193,22 +194,46 @@ def test(model,config):
 
     model.load_state_dict(torch.load(config.save_model,map_location=torch.device(config.device)))
 
-    y_train_pred, Y1 = draw_pic(model, config, on_train=True)
-    y_test_pred, Y1 = draw_pic(model, config, on_train=False)
+    y_train_pred, Y1,pic_data = draw_pic(model, config, on_train=True)
+    y_test_pred, Y1,_ = draw_pic(model, config, on_train=False)
 
-    plt.ion()
+    # plt.ion()
+    fig,(ax0,ax1) = plt.subplots(nrows=2)
+    ax0.set_title(config.model_name+'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next))
+    # ax0.plot(range(1, 1 + len(Y1)), Y1, label='Ground Truth')
+    ax0.plot(pic_data.ds,pic_data.y, label='Ground Truth')
+    ax0.plot(pic_data.ds[config.ntime_steps:config.ntime_steps +len(y_train_pred)],y_train_pred,alpha=0.5,label='Predicted - Train')
+    ax0.plot(pic_data.ds[config.ntime_steps+ len(y_train_pred)-1:],y_test_pred,alpha=0.5,label='Predicted - Test')
 
-    plt.figure(figsize=(10,3),dpi=300)
-    plt.title(config.model_name+'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next))
-    plt.plot(range(1, 1 + len(Y1)), Y1, label='Ground Truth')
-    plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1), y_test_pred, label='Predicted - Test')
+    ax1.set_title('Magnifies test set predictions')
+    ax1.plot(pic_data.ds[config.ntime_steps+ len(y_train_pred)-1:],pic_data.y[config.ntime_steps+ len(y_train_pred)-1:], label='Ground Truth')
+    ax1.plot(pic_data.ds[config.ntime_steps+ len(y_train_pred)-1:],y_test_pred,'g',alpha=0.5,label='Predicted - Test')
 
-    plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps), y_train_pred, label='Predicted - Train')
+    for tick in ax1.get_xticklabels():
+        tick.set_rotation(25)
+    # ax0.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1), y_test_pred,alpha=0.5,label='Predicted - Test')
+    # ax0.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps), y_train_pred,alpha=0.4,label='Predicted - Train')
+    #
+
+    # ax1.plot(range(1, len(y_test_pred)),Y1[len(y_train_pred)+config.ntime_steps:],label='Ground Truth')
+    #
+    # ax1.plot(range(1 ,1 + len(y_test_pred)),y_test_pred,label='Predicted - Test')
+
+    # plt.figure(figsize=(10,3),dpi=300)
+    # plt.title(config.model_name+'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next))
+    # plt.plot(range(1, 1 + len(Y1)), Y1, label='Ground Truth')
+    # plt.plot(range(config.ntime_steps + len(y_train_pred), len(Y1) + 1), y_test_pred, label='Predicted - Test')
+    #
+    # plt.plot(range(config.ntime_steps, len(y_train_pred) + config.ntime_steps), y_train_pred, label='Predicted - Train')
+    # plt.tight_layout()
+    # plt.legend()
+    # # plt.pause(1)
+    # # plt.close()
+    # plt.savefig('./data/pic/'+config.model_name +'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next)+'.png')
+    ax0.legend()
+    ax1.legend()
     plt.tight_layout()
-    plt.legend()
-    # plt.pause(1)
-    # plt.close()
-    plt.savefig('./data/pic/'+config.model_name +'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next)+'.png')
+    plt.savefig('./data/pic/'+config.model_name +'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next)+'.png',dpi=300)
     plt.show()
 
 def evaluate(model,config,train_data,test_data):

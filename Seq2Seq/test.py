@@ -17,7 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq类模型进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='MyDA',help='choose a model CNN,LSTM,GRU,Seq2Seq,CNN_LSTM+self_Att,Seq2Seq+Att,DA_RNN,CNN_LSTM,CNN_GRU')
+    parser.add_argument('--model_name',type=str,default='GRU_Att',help='choose a model CNN,LSTM,GRU,Seq2Seq,CNN_LSTM+self_Att,Seq2Seq+Att,DA_RNN,CNN_LSTM,CNN_GRU')
 
     args = parser.parse_args()
 
@@ -75,47 +75,36 @@ def main_DA_test():
         该函数为训练Seq2Seq_Att模型的函数
         :return:
         """
+    np.random.seed(1)
+    torch.manual_seed(1)
+    torch.cuda.manual_seed_all(1)
+    torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
+    #
     args = parse_args()  # 加载所选模型的名字
     model_name = args.model_name
     x = import_module('model.' + model_name)
     config = x.Config()
 
-    # Read dataset
-    print("==> Load dataset ...")
-    X, y = read_data(config.dataroot, debug=False)
+    model = x.Model(config)
+    model = model.to(config.device)
 
-    # Initialize model
-    print("==> Initialize DA_test model ...")
-    model = x.Model(
-        X,
-        y,
-        config
-    )
+    print('==>当前使用的模型为：' + model_name + '_T：' + str(config.ntime_steps) + '_D:' + str(config.n_next))
 
-    # Train
-    print("==> Start training ...")
-    model.train(model, config)  # model 输入进去用于保存模型
+    print('==>加载数据中...')
 
-    # Prediction
-    y_pred = model.test()
+    Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
 
-    fig1 = plt.figure()
-    plt.semilogy(range(len(model.iter_losses)), model.iter_losses)
-    plt.savefig("./data/pic/1_test.png")
-    plt.close(fig1)
+    # ntime_steps   为时间窗口T
+    # n_next        为想要预测的天数
+    train_data = MyDataset(Train_X, Train_Y)
 
-    fig2 = plt.figure()
-    plt.semilogy(range(len(model.epoch_losses)), model.epoch_losses)
-    plt.savefig("./data/pic/2_test.png")
-    plt.close(fig2)
+    test_data = MyDataset(Test_X, Test_Y)
 
-    fig3 = plt.figure()
-    plt.plot(y_pred, label='Predicted')
-    plt.plot(model.y[model.train_timesteps:], label="True")
-    plt.legend(loc='upper left')
-    plt.savefig("./data/pic/3_test.png")
-    plt.close(fig3)
-    print('Finished Training')
+    train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
+
+    test_dataloader = DataLoader(dataset=test_data, batch_size=config.test_batch_size)
+
+    model.train(model, config, train_dataloader, test_dataloader)
 
 def run_DA_RNN_model():
     """
@@ -153,7 +142,7 @@ def main_Seq2Seq():
     x = import_module('model.' + model_name)
     config = x.Config()  # 加载模型的配置
     model = x.Seq2Seq(config)  # 加载模型
-    print('==>当前使用的模型为：' + model_name)
+    print('==>当前使用的模型为：' + model_name+'_T:'+str(config.ntime_steps)+'_D:'+str(config.n_next))
 
     print('==>加载数据中...')
     # ntime_steps   为时间窗口T
@@ -163,7 +152,6 @@ def main_Seq2Seq():
 
     train_data = MyDataset(Train_X, Train_Y)
     train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
-
 
     model.train(model, config, train_dataloader)  # Seq2Seq训练模型
 
@@ -179,8 +167,10 @@ def run_Seq2Seq_model():
 
     print('运行已经跑好的模型')
     model = x.Seq2Seq(config)
-    model.load_state_dict(torch.load(config.save_model))
-    model.test_model()    # 测试有问题
+    # model = model.load_state_dict(torch.load(config.save_model))
+
+    # print(model)
+    model.test_model(config)    # 测试有问题
 
 #随机森林方法预测
 def RF():
@@ -267,66 +257,64 @@ def MyDA():
 
 if __name__ == '__main__':
 
-
-    MyDA()
-
+    # MyDA()
 
     # RF()  #随机森林
     # ARIMA()  #移动平均算法
 
     # GBRT()   #渐进递归回归树（Gradient Boosting Regression）
 
-
     # main_DA_RNN()
     # main_DA_test()
     # run_DA_RNN_model()
+
     # main_Seq2Seq()
-    #
-    # run_Seq2Seq_model()  #有问题
+
+    # run_Seq2Seq_model()  #有问题画的图并非是最优的
 
 #############################################################
       # CNN_LSTM   CNN_GRU
 
-    # np.random.seed(1)
-    # torch.manual_seed(1)
-    # torch.cuda.manual_seed_all(1)
-    # torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
-    # #
-    # args = parse_args()  # 加载所选模型的名字
-    # model_name = args.model_name
-    # x = import_module('model.' + model_name)
-    # config = x.Config()
+    np.random.seed(1)
+    torch.manual_seed(1)
+    torch.cuda.manual_seed_all(1)
+    torch.backends.cudnn.deterministic = True  # 保证每次运行结果一样
     #
-    # model = x.Model(config)
-    # model = model.to(config.device)
-    #
-    # print('==>当前使用的模型为：' + model_name +'_T：'+str(config.ntime_steps) + '_D:'+ str(config.n_next))
-    #
-    # print('==>加载数据中...')
-    #
-    # Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
-    #
-    # # ntime_steps   为时间窗口T
-    # # n_next        为想要预测的天数
-    # train_data = MyDataset(Train_X,Train_Y)
-    #
-    # test_data = MyDataset(Test_X,Test_Y)
-    #
-    #
-    # train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
-    #
-    # test_dataloader = DataLoader(dataset=test_data,batch_size=config.test_batch_size)
-    #
-    # flag = os.path.exists(config.save_model)
-    # if flag==True:
-    #     print('====>该模型已经训练过！直接进行测试')
-    #     train.test(model, config)
-    #     # train.draw_model_structure(model, config)  # 画出模型的结构
-    #
-    # else:
-    #     train.train(model, config, train_dataloader,test_dataloader)
+    args = parse_args()  # 加载所选模型的名字
+    model_name = args.model_name
+    x = import_module('model.' + model_name)
+    config = x.Config()
 
-        # train.test(model,config)
+    model = x.Model(config)
+    model = model.to(config.device)
+
+    print('==>当前使用的模型为：' + model_name +'_T：'+str(config.ntime_steps) + '_D:'+ str(config.n_next))
+
+    print('==>加载数据中...')
+
+    Train_X, Train_Y, Test_X, Test_Y = get_data(config.ntime_steps, config.n_next)
+
+    # ntime_steps   为时间窗口T
+    # n_next        为想要预测的天数
+    train_data = MyDataset(Train_X,Train_Y)
+
+    test_data = MyDataset(Test_X,Test_Y)
+
+
+    train_dataloader = DataLoader(dataset=train_data, batch_size=config.batch_size)
+
+    test_dataloader = DataLoader(dataset=test_data,batch_size=config.test_batch_size)
+
+    flag = os.path.exists(config.save_model)
+    if flag==True:
+        print('====>该模型已经训练过！直接进行测试')
+        train.test(model, config)
+        # train.draw_model_structure(model, config)  # 画出模型的结构
+
+    else:
+        train.train(model, config, train_dataloader,test_dataloader)
+
+        train.test(model,config)
 
     # #     # train.draw_model_structure(model,config)  #画出模型的结构
 
