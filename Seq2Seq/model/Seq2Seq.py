@@ -26,7 +26,7 @@ class Config(object):
         self.batch_size  = 128
 
         self.ntime_steps = 30 #为时间窗口
-        self.n_next = 3       #为往后预测的天数
+        self.n_next = 1       #为往后预测的天数
 
         self.input_size = 20   #输入数据的维度
         self.hidden_dim = 128  #隐藏层的大小
@@ -151,9 +151,11 @@ class Seq2Seq(nn.Module):
 
 
             # self.test(epoch,config,model)
+            if all_epoch % 100 ==0:
+                self.test_model(config)
 
             if all_epoch % 10 == 0:
-                self.test_model(config)  # 可视化训练中的实际情况
+                # self.test_model(config)  # 可视化训练中的实际情况
                 if loss < best_loss:
                     best_loss = loss
                     # torch.save(model.state_dict(), config.save_model)  #只保存模型的参数

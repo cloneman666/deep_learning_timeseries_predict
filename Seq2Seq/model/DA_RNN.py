@@ -19,6 +19,7 @@ from sklearn.metrics import mean_absolute_error,mean_squared_error
 import time
 import utils
 import logging
+from model.utils import *
 
 class Config(object):
     def __init__(self):
@@ -34,10 +35,10 @@ class Config(object):
 
         self.nhidden_decoder  = 128
 
-        self.ntimestep  = 30   #时间窗口，即为T
+        self.ntime_steps  = 30   #时间窗口，即为T
         self.n_next = 1  # 为往后预测的天数
 
-        self.save_model = './data/check_point/best_DA_RNN_air_T:'+str(self.ntimestep)+'_D:'+str(self.n_next)+'.pth'
+        self.save_model = './data/check_point/best_DA_RNN_air_T:'+str(self.ntime_steps)+'_D:'+str(self.n_next)+'.pth'
 
         self.epochs  = 3000
 
@@ -212,7 +213,7 @@ class Model(nn.Module):
         self.parallel = parallel
         self.shuffle = False
         self.epochs = config.epochs
-        self.T = config.ntimestep
+        self.T = config.ntime_steps
         self.X = X
         self.y = y
 
@@ -222,10 +223,10 @@ class Model(nn.Module):
 
         self.Encoder = Encoder(input_size=X.shape[1],
                                encoder_num_hidden=config.nhidden_encoder,
-                               T=config.ntimestep).to(self.device)
+                               T=config.ntime_steps).to(self.device)
         self.Decoder = Decoder(encoder_num_hidden=config.nhidden_encoder,
                                decoder_num_hidden=config.nhidden_decoder,
-                               T=config.ntimestep,n_next=config.n_next).to(self.device)
+                               T=config.ntime_steps,n_next=config.n_next).to(self.device)
 
         # Loss function
         self.criterion = nn.MSELoss()
@@ -384,6 +385,7 @@ class Model(nn.Module):
 
     def test(self, on_train=False):
         """Prediction."""
+        pic_data = read_all_data('./data/one_hot_甘.csv')
 
         if on_train:
             y_pred = np.zeros(self.train_timesteps - self.T + 1)
@@ -416,24 +418,46 @@ class Model(nn.Module):
 
             i += self.batch_size
 
-        return y_pred
+        return y_pred,pic_data
 
     def test_model(self,config):
 
-        y_train_pred = self.test(on_train=True)
-        y_test_pred = self.test(on_train=False)
+        y_train_pred ,pic_data= self.test(on_train=True)
+        y_test_pred,_ = self.test(on_train=False)
         y_pred = np.concatenate((y_train_pred, y_test_pred))
 
-        plt.ioff()
-        plt.figure(figsize=(10,3),dpi=300)
-        plt.title('DA_RNN_T:'+str(config.ntimestep)+'D:1')
-        plt.plot(range(1, 1 + len(self.y)), self.y, label="Ground Truth")
+        fig, (ax0, ax1) = plt.subplots(nrows=2)
+        ax0.set_title(config.model_name + '_T:' + str(config.ntime_steps) + '_D:' + str(config.n_next))
+        # ax0.plot(range(1, 1 + len(Y1)), Y1, label='Ground Truth')
+        ax0.plot(pic_data.ds, pic_data.y, label='Ground Truth')
+        ax0.plot(pic_data.ds[config.ntime_steps:config.ntime_steps + len(y_train_pred)], y_train_pred, alpha=0.5,
+                 label='Predicted - Train')
+        ax0.plot(pic_data.ds[config.ntime_steps + len(y_train_pred) - 1:], y_test_pred, alpha=0.5,
+                 label='Predicted - Test')
 
-        plt.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
-        plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),y_test_pred, label='Predicted - Test')
+        ax1.set_title('Magnifies test set predictions')
+        ax1.plot(pic_data.ds[config.ntime_steps + len(y_train_pred) - 1:],
+                 pic_data.y[config.ntime_steps + len(y_train_pred) - 1:], label='Ground Truth')
+        ax1.plot(pic_data.ds[config.ntime_steps + len(y_train_pred) - 1:], y_test_pred, 'g', alpha=0.5,
+                 label='Predicted - Test')
+
+        for tick in ax1.get_xticklabels():
+            tick.set_rotation(25)
+
+        # plt.ioff()
+        # plt.figure(figsize=(10,3),dpi=300)
+        # plt.title('DA_RNN_T:'+str(config.ntimestep)+'D:1')
+        # plt.plot(range(1, 1 + len(self.y)), self.y, label="Ground Truth")
+        #
+        # plt.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
+        # plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),y_test_pred, label='Predicted - Test')
+        # plt.tight_layout()
+        # plt.legend(loc='upper left')
+        # plt.savefig('./data/pic/DA_RNN_T:'+str(config.ntimestep)+'D:1.png')
+        ax0.legend()
+        ax1.legend()
         plt.tight_layout()
-        plt.legend(loc='upper left')
-        plt.savefig('./data/pic/DA_RNN_T:'+str(config.ntimestep)+'D:1.png')
+        plt.savefig('./data/pic/DA_RNN_T:' + str(config.ntime_steps) + 'D:1.png')
         plt.show()
 
 
