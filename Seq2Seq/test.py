@@ -17,7 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Seq2Seq类模型进行时间序列预测")
 
     #选择模型即可
-    parser.add_argument('--model_name',type=str,default='DA_RNN',help='choose a model CNN,LSTM,GRU,Seq2Seq,CNN_LSTM+self_Att,Seq2Seq+Att,DA_RNN,CNN_LSTM,CNN_GRU')
+    parser.add_argument('--model_name',type=str,default='DA_test2',help='choose a model CNN,LSTM,GRU,Seq2Seq,CNN_LSTM+self_Att,Seq2Seq+Att,DA_RNN,CNN_LSTM,CNN_GRU')
 
     args = parser.parse_args()
 
@@ -220,6 +220,17 @@ def GBRT():
 
     train_GBRT(train_x, train_y, test_x, test_y, y)
 
+def XGBoost():
+    X, y = read_data('./data/one_hot_甘.csv', debug=False)
+
+    train_size = int(len(X) * 0.8)
+
+    train_x = X[:train_size]
+    test_x = X[train_size:]
+
+    train_y = y[:train_size]
+    test_y = y[train_size:]
+
 
 def MyDA():
     np.random.seed(1)
@@ -263,10 +274,11 @@ if __name__ == '__main__':
     # ARIMA()  #移动平均算法
 
     # GBRT()   #渐进递归回归树（Gradient Boosting Regression）
+    # XGBoost()
 
-    # main_DA_RNN()
+    main_DA_RNN()
     # main_DA_test()
-    run_DA_RNN_model()
+    # run_DA_RNN_model()
 
     # main_Seq2Seq()
 

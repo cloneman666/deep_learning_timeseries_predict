@@ -35,8 +35,8 @@ class Config(object):
 
         self.nhidden_decoder  = 128
 
-        self.ntime_steps  = 30   #时间窗口，即为T
-        self.n_next = 1  # 为往后预测的天数
+        self.ntime_steps  = 25   #时间窗口，即为T
+        self.n_next = 1  # 为往后预测的天数，目前此版本只能为1
 
         self.save_model = './data/check_point/best_DA_RNN_air_T:'+str(self.ntime_steps)+'_D:'+str(self.n_next)+'.pth'
 
@@ -249,7 +249,7 @@ class Model(nn.Module):
 
     def train(self,model,config):  #参数model用于将模型保存时用到，config 用于存储模型位置的时候用到
 
-        logging_name = config.model_name + '_D:' + str(config.ntimestep) + '_D:'+str(config.n_next)
+        logging_name = config.model_name + '_D:' + str(config.ntime_steps) + '_D:'+str(config.n_next)
         logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s', filename='./log/' + logging_name + '.log',
                             level=logging.INFO)
 
@@ -307,21 +307,21 @@ class Model(nn.Module):
                     epoch * iter_per_epoch, (epoch + 1) * iter_per_epoch)])
 
 
-            if epoch % 10 == 0:
-                y_train_pred = self.test(on_train=True)
-                y_test_pred = self.test(on_train=False)
-                y_pred = np.concatenate((y_train_pred, y_test_pred))
-                plt.ion()
-                plt.figure()
-                plt.plot(range(1, 1 + len(self.y)), self.y, label="Ground Truth")
-                plt.plot(range(self.T, len(y_train_pred) + self.T),
-                         y_train_pred, label='Predicted - Train')
-                plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),
-                         y_test_pred, label='Predicted - Test')
-                plt.legend(loc='upper left')
-                plt.pause(2)
-                plt.close()
-                # plt.draw()
+            # if epoch % 10 == 0:
+            #     y_train_pred = self.test(on_train=True)
+            #     y_test_pred = self.test(on_train=False)
+            #     y_pred = np.concatenate((y_train_pred, y_test_pred))
+            #     plt.ion()
+            #     plt.figure()
+            #     plt.plot(range(1, 1 + len(self.y)), self.y, label="Ground Truth")
+            #     plt.plot(range(self.T, len(y_train_pred) + self.T),
+            #              y_train_pred, label='Predicted - Train')
+            #     plt.plot(range(self.T + len(y_train_pred), len(self.y) + 1),
+            #              y_test_pred, label='Predicted - Test')
+            #     plt.legend(loc='upper left')
+            #     plt.pause(2)
+            #     plt.close()
+            #     # plt.draw()
                 # plt.show()
 
             if all_epoch % 10 == 0:
