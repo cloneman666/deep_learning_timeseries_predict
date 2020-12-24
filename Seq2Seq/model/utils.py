@@ -25,7 +25,8 @@ def read_data(input_path, debug=False):
 
     """
     df = pd.read_csv(input_path, nrows=250 if debug else None)
-    # X = df.loc[:, [x for x in df.columns.tolist() if x != 'NDX']].as_matrix()
+    # X = df.loc[:, [x for x in df.columns.tolist() if x != 'NDX']].values #.as_matrix()
+
     X = df.loc[:, [x for x in df.columns.tolist() if x != 'ds' and x != 'y' and x != 'start_time' and x != 'Cls_Cd_Y']].values
 
     y = np.array(df.y)

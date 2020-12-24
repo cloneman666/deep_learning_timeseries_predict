@@ -23,19 +23,17 @@ from model.utils import *
 
 class Config(object):
     def __init__(self):
-        self.model_name = 'DA_RNN'
+        self.model_name = 'ADA'
 
         self.dataroot = './data/one_hot_甘.csv'
 
         self.batchsize = 128
 
-
-
         self.nhidden_encoder  = 128
 
         self.nhidden_decoder  = 128
 
-        self.ntime_steps  = 25   #时间窗口，即为T
+        self.ntime_steps  = 30  #时间窗口，即为T
         self.n_next = 1  # 为往后预测的天数，目前此版本只能为1
 
         self.save_model = './data/check_point/best_DA_RNN_air_T:'+str(self.ntime_steps)+'_D:'+str(self.n_next)+'.pth'
@@ -457,7 +455,7 @@ class Model(nn.Module):
         ax0.legend()
         ax1.legend()
         plt.tight_layout()
-        plt.savefig('./data/pic/DA_RNN_T:' + str(config.ntime_steps) + 'D:1.png')
+        plt.savefig('./data/pic/DA_RNN_T:' + str(config.ntime_steps) + 'D:1.png',dpi=300)
         plt.show()
 
 

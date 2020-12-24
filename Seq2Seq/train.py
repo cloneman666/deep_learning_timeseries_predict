@@ -199,7 +199,7 @@ def test(model,config):
 
     # plt.ion()
     fig,(ax0,ax1) = plt.subplots(nrows=2)
-    ax0.set_title(config.model_name+'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next))
+    ax0.set_title(config.model_name+'_T:' + str(config.ntime_steps)+ '_D:'+str(config.n_next))  #
     # ax0.plot(range(1, 1 + len(Y1)), Y1, label='Ground Truth')
     ax0.plot(pic_data.ds,pic_data.y, label='Ground Truth')
     ax0.plot(pic_data.ds[config.ntime_steps:config.ntime_steps +len(y_train_pred)],y_train_pred,alpha=0.5,label='Predicted - Train')
@@ -233,7 +233,7 @@ def test(model,config):
     ax0.legend()
     ax1.legend()
     plt.tight_layout()
-    plt.savefig('./data/pic/'+config.model_name +'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next)+'.png',dpi=300)
+    plt.savefig('./data/pic/'+config.model_name +'_T:'+str(config.ntime_steps) +'_D:'+str(config.n_next)+'.png',dpi=300)  #
     plt.show()
 
 def evaluate(model,config,train_data,test_data):
