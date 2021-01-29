@@ -9,6 +9,7 @@ import utils   #这个为计算时间的方法，为公共方法，所以定义�
 from model.Random_Forest import *
 from model.ARIMA import *
 from model.GBRT import *
+# from model.XGBoost import *
 import torch
 
 def parse_args():
@@ -229,6 +230,8 @@ def XGBoost():
 
     train_y = y[:train_size]
     test_y = y[train_size:]
+
+    train_XGBoost(train_x, train_y, test_x, test_y, y)
 
 def MyDA():
     np.random.seed(1)

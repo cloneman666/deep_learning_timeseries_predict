@@ -9,7 +9,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 x=[3,7,11,15,20]  #后面的天数3，7，11，15，20
-x2 = [10,15,20,25,30,35,40] #时间窗口数
+x2 = [10,15,20,25,30] #时间窗口数  ,35,40
 x3 = [16,32,64,100,128] #自己算法的隐藏层
 #画x
 def draw():
@@ -109,19 +109,23 @@ def draw():
 #################################################
 #画x2
 def draw2():
+    font = {'family': 'Times New Roman',
+             'weight': 'normal',
+             'size': 15,
+             }
     #MSE
     MSEARIMA = [0.42475, 0.30813, 0.28775, 0.36860, 0.34956]
 
 
-    MSECNN_LSTM = [5.29e-8, 1.1025e-6, 0.01458, 0.01575, 0.02382,0.00806,0.02795]
-    MSECNN_LSTM_Att = [0.00003, 0.00002, 0.05500, 0.02656, 0.01459,0.06186,0.01773]
+    MSECNN_LSTM = [5.29e-8, 1.1025e-6, 0.01458, 0.01575, 0.02382]  #,0.00806,0.02795
+    MSECNN_LSTM_Att = [0.00003, 0.00002, 0.05500, 0.02656, 0.01459]  #,0.06186,0.01773
 
     MSELSTM_CNN = [0.09895, 0.08562, 0.09928, 0.09836, 0.10385]
 
-    MSESeq2Seq = [4.096e-7, 0.00004, 0.00018, 0.00047, 0.00023,0.00003,2.025e-7]
-    MSESeq2Seq_Att = [0.02539, 0.01061, 0.02693, 0.03345, 0.03021,0.02097,0.01212]
+    MSESeq2Seq = [4.096e-7, 0.00004, 0.00018, 0.00047, 0.00023]  #,0.00003,2.025e-7
+    MSESeq2Seq_Att = [0.02539, 0.01061, 0.02693, 0.03345, 0.03021]  #,0.02097,0.01212
 
-    MSEDA_RNN = [0.00002,0.00002,0.00001,1.9044e-6,0.00002,0.00001,2.4964e-6]
+    MSEDA_RNN = [0.00002,0.00002,0.00001,1.9044e-6,0.00002]  #,0.00001,2.4964e-6
     # plt.title('T:30') #这部分所画的为不同的时间窗口，预测后面1天的图
 
 
@@ -131,10 +135,11 @@ def draw2():
     # plt.plot(x2, MSELSTM_CNN, '+-', label='LSTM_CNN')
     plt.plot(x2, MSESeq2Seq, '<-', label='Seq2Seq')
     plt.plot(x2, MSESeq2Seq_Att, '>-', label='Seq2Seq_Att')
-    plt.plot(x2,MSEDA_RNN,'*-',label='ADA')
+    plt.plot(x2,MSEDA_RNN,'*-',label='MADA')
     plt.xticks(x2)
-    plt.ylabel('MSE')
-    plt.xlabel('Time window')
+    plt.tick_params(labelsize=13)
+    plt.ylabel('MSE',font)
+    plt.xlabel('Time window',font)
     plt.legend()
     plt.tight_layout()
     plt.savefig('MSE固定D=1比较图.png', dpi=300)
@@ -145,14 +150,14 @@ def draw2():
     RMSEARIMA = [0.65173, 0.55509, 0.53642, 0.60712, 0.59123]
 
 
-    RMSECNN_LSTM = [0.00023, 0.00105, 0.12076, 0.12551, 0.15434,0.08979,0.16718]
-    RMSECNN_LSTM_Att = [0.00579, 0.00497, 0.23453, 0.16296, 0.12079,0.24872,0.13316]
+    RMSECNN_LSTM = [0.00023, 0.00105, 0.12076, 0.12551, 0.15434] #,0.08979,0.16718
+    RMSECNN_LSTM_Att = [0.00579, 0.00497, 0.23453, 0.16296, 0.12079]  #,0.24872,0.13316
 
     RMSELSTM_CNN = [0.31456, 0.29261, 0.31509, 0.31363, 0.32226]
-    RMSESeq2Seq = [0.00064, 0.00653, 0.01336, 0.02178, 0.01533,0.00578,0.00045]
-    RMSESeq2Seq_Att = [0.15935, 0.10302, 0.16411, 0.18288, 0.17381,0.14480,0.11008]
+    RMSESeq2Seq = [0.00064, 0.00653, 0.01336, 0.02178, 0.01533]  #,0.00578,0.00045
+    RMSESeq2Seq_Att = [0.15935, 0.10302, 0.16411, 0.18288, 0.17381]  #,0.14480,0.11008
 
-    RMSEDA_RNN = [0.00495,0.00496,0.00230,0.00138,0.00461,0.00234,0.00158]
+    RMSEDA_RNN = [0.00495,0.00496,0.00230,0.00138,0.00461]  #,0.00234,0.00158
 
     # plt.plot(x,RMSECNN,'*-',label='CNN')
     # plt.plot(x2, RMSEARIMA, '*-', label='ARIMA')
@@ -161,10 +166,11 @@ def draw2():
     # plt.plot(x2, RMSELSTM_CNN, '+-', label='LSTM_CNN')
     plt.plot(x2, RMSESeq2Seq, '<-', label='Seq2Seq')
     plt.plot(x2, RMSESeq2Seq_Att, '>-', label='Seq2Seq_Att')
-    plt.plot(x2, RMSEDA_RNN, '*-', label='ADA')
+    plt.plot(x2, RMSEDA_RNN, '*-', label='MADA')
     plt.xticks(x2)
-    plt.ylabel('RMSE')
-    plt.xlabel('Time window')
+    plt.tick_params(labelsize=13)
+    plt.ylabel('RMSE',font)
+    plt.xlabel('Time window',font)
     plt.legend()
     plt.tight_layout()
     plt.savefig('RMSE固定D=1比较图.png', dpi=300)
@@ -175,14 +181,14 @@ def draw2():
 
     MAEARIMA = [0.56223, 0.50075, 0.46643, 0.54624, 0.53631]
 
-    MAECNN_LSTM = [0.00020, 0.00102, 0.03424, 0.05741, 0.06595,0.01880,0.11949]
-    MAECNN_LSTM_Att = [0.00433, 0.00468, 0.11063, 0.08167, 0.09214,0.14585,0.08566]
+    MAECNN_LSTM = [0.00020, 0.00102, 0.03424, 0.05741, 0.06595]  #,0.01880,0.11949
+    MAECNN_LSTM_Att = [0.00433, 0.00468, 0.11063, 0.08167, 0.09214]  #,0.14585,0.08566
 
     MAELSTM_CNN = [0.19656, 0.16951, 0.19683, 0.19623, 0.19938]
-    MAESeq2Seq = [0.00054, 0.00584, 0.00592, 0.01643, 0.01208,0.00397,0.00028]
-    MAESeq2Seq_Att = [0.12125, 0.06864, 0.12378, 0.16479, 0.15173,0.11875,0.09632]
+    MAESeq2Seq = [0.00054, 0.00584, 0.00592, 0.01643, 0.01208]  #,0.00397,0.00028
+    MAESeq2Seq_Att = [0.12125, 0.06864, 0.12378, 0.16479, 0.15173]  #,0.11875,0.09632
 
-    MAEDA_RNN = [0.00331,0.00399,0.00193,0.00109,0.00380,0.00200,0.00145]
+    MAEDA_RNN = [0.00331,0.00399,0.00193,0.00109,0.00380]  #,0.00200,0.00145
     # plt.plot(x,MAECNN,'*-',label='CNN')
     # plt.plot(x2, MAEARIMA, '*-', label='ARIMA')
     plt.plot(x2, MAECNN_LSTM, 'o-', label='CNN_LSTM')
@@ -190,10 +196,11 @@ def draw2():
     # plt.plot(x2, MAELSTM_CNN, '+-', label='LSTM_CNN')
     plt.plot(x2, MAESeq2Seq, '<-', label='Seq2Seq')
     plt.plot(x2, MAESeq2Seq_Att, '>-', label='Seq2Seq_Att')
-    plt.plot(x2, MAEDA_RNN, '*-', label='ADA')
+    plt.plot(x2, MAEDA_RNN, '*-', label='MADA')
     plt.xticks(x2)
-    plt.ylabel('MAE')
-    plt.xlabel('Time window')
+    plt.tick_params(labelsize=13)
+    plt.ylabel('MAE',font)
+    plt.xlabel('Time window',font)
     plt.legend()
     plt.tight_layout()
     plt.savefig('MAE固定D=1比较图.png', dpi=300)
@@ -211,6 +218,11 @@ def draw3():  #T:30_D:1
     # 256:MSE:0.0000018769, RMSE:0.00137, MAE:0.00098
 
     # MSE: 0.00002, RMSE: 0.00461, MAE: 0.00380
+
+    font = {'family': 'Times New Roman',
+            'weight': 'normal',
+            'size': 15,
+            }
 
     mse = [0.00064,0.00572,0.00005,1.8225e-6,0.00002]
     rmse = [0.02539,0.07562,0.00714,0.00135,0.00461]
@@ -231,29 +243,30 @@ def draw3():  #T:30_D:1
     total_width, n = 0.8, 3
     width = total_width / n
     x = x - (total_width - width) / 2
-    plt.title('ADA')
+    plt.title('MADA',font)
     plt.bar(x, mse, width=width, label='MSE')
     plt.bar(x + width, rmse, width=width, label='RMSE')
     plt.bar(x + 2 * width, mae, width=width, label='MAE')
 
-    plt.xlabel('Different hidden layers')
+    plt.xlabel('Different hidden layers',font)
     plt.xticks(x + width, x3)
+    plt.tick_params(labelsize=13)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('ADA不同隐藏层.png', dpi=300)
+    plt.savefig('MADA不同隐藏层.png', dpi=300)
     plt.show()
 
 def draw4():
     """
     画Seq2Seq,Seq2Seq+单Att,Seq2Seq+双Att
-    seq2seq
+    seq2seq  ---->MADA_nAttn
     16 : MSE:0.00023, RMSE:0.01502, MAE:0.01114,
     32 : MSE:0.00003, RMSE:0.00572, MAE:0.00298
     64: MSE:0.00004, RMSE:0.00628, MAE:0.00447,
     100: MSE:0.00001, RMSE:0.00303, MAE:0.00145
     128: MSE:0.00002, RMSE:0.00390, MAE:0.00225
 
-    seq2seq+Att
+    seq2seq+Att ---->MADA_sAttn
     16:MSE:0.03076, RMSE:0.17539, MAE:0.12745
     32:MSE:0.04317, RMSE:0.20778, MAE:0.17103
     64:MSE:0.00124, RMSE:0.03521, MAE:0.02697
@@ -262,6 +275,11 @@ def draw4():
 
     :return:
     """
+    font = {'family': 'Times New Roman',
+            'weight': 'normal',
+            'size': 15,
+            }
+
     seq2seqmse = [0.00023, 0.00003, 0.00004, 0.00001, 0.00002]
     seq2seqrmse = [0.01502, 0.00572, 0.00628, 0.00303, 0.00390]
     seq2seqmae = [0.01114, 0.00298, 0.00447, 0.00145, 0.00225]
@@ -275,25 +293,27 @@ def draw4():
     total_width, n = 0.8, 3
     width = total_width / n
     x = x - (total_width - width) / 2
-    plt.title('Seq2Seq')
+    plt.title('MADA_nAttn',font)
     plt.bar(x, seq2seqmse, width=width, label='MSE')
     plt.bar(x + width, seq2seqrmse, width=width, label='RMSE')
     plt.bar(x + 2 * width, seq2seqmae, width=width, label='MAE')
 
-    plt.xlabel('Different hidden layers')
+    plt.xlabel('Different hidden layers',font)
     plt.xticks(x + width, x3)
+    plt.tick_params(labelsize=13)
     plt.legend()
     plt.tight_layout()
     plt.savefig('seq2seq不同隐藏层.png', dpi=300)
     plt.show()
 
-    plt.title('Seq2Seq+Attn')
+    plt.title('MADA_sAttn',font)
     plt.bar(x, seq2seq_attmse, width=width, label='MSE')
     plt.bar(x + width, seq2seq_attrmse, width=width, label='RMSE')
     plt.bar(x + 2 * width, seq2seq_attmae, width=width, label='MAE')
 
-    plt.xlabel('Different hidden layers')
+    plt.xlabel('Different hidden layers',font)
     plt.xticks(x + width, x3)
+    plt.tick_params(labelsize=13)
     plt.legend()
     plt.tight_layout()
     plt.savefig('seq2seq+Attn不同隐藏层.png', dpi=300)
@@ -301,4 +321,4 @@ def draw4():
 
 
 if __name__ == '__main__':
-    draw2()
+    draw3()

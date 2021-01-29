@@ -23,7 +23,7 @@ from model.utils import *
 
 class Config(object):
     def __init__(self):
-        self.model_name = 'ADA'
+        self.model_name = 'MADA'
 
         self.dataroot = './data/one_hot_甘.csv'
 

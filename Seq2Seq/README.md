@@ -5,3 +5,5 @@
 传统的模型：ARIMA,随机森林(Random forests)
 
 深度学习模型：Seq2Seq,Seq2Seq+Attention,CNN_LSTM
+
+所实现的模型和方法可以从model文件中寻找
